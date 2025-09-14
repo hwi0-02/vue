@@ -33,7 +33,4 @@ build/
 !**/src/test/**/build/
 
 ### VS Code ###
-.vscode/
-
-### Application Properties (local config) ###
-application-local.properties
+.vscode/    

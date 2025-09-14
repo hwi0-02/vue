@@ -33,16 +33,33 @@ public class LoginController {
     @PostMapping("/users/login")
     public ResponseEntity<?> login(@RequestParam String email, @RequestParam String password) {
         log.info("Login attempt for email: {}", email);
-        Optional<User> user = loginService.login(email, password);
         
-        if (user.isPresent()) {
-            String token = jwtUtil.generateToken(user.get());
-            Map<String, Object> response = new HashMap<>();
-            response.put("token", token);
-            response.put("user", getUserInfo(user.get()));
-            return ResponseEntity.ok(response);
-        } else {
-            return ResponseEntity.status(401).body("로그인 실패: 이메일 또는 비밀번호 불일치");
+        // 입력 검증
+        if (email == null || email.trim().isEmpty()) {
+            return ResponseEntity.badRequest().body("이메일을 입력해주세요.");
+        }
+        
+        if (password == null || password.trim().isEmpty()) {
+            return ResponseEntity.badRequest().body("비밀번호를 입력해주세요.");
+        }
+        
+        try {
+            Optional<User> user = loginService.login(email.trim(), password);
+            
+            if (user.isPresent()) {
+                String token = jwtUtil.generateToken(user.get());
+                Map<String, Object> response = new HashMap<>();
+                response.put("token", token);
+                response.put("user", getUserInfo(user.get()));
+                log.info("Login successful for email: {}", email);
+                return ResponseEntity.ok(response);
+            } else {
+                log.warn("Login failed for email: {} - Invalid credentials", email);
+                return ResponseEntity.status(401).body("로그인 실패: 이메일 또는 비밀번호가 일치하지 않습니다.");
+            }
+        } catch (Exception e) {
+            log.error("Login error for email: {} - {}", email, e.getMessage());
+            return ResponseEntity.status(500).body("로그인 중 오류가 발생했습니다.");
         }
     }
 

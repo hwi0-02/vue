@@ -146,25 +146,6 @@ GET  /user/me                          - 현재 사용자 정보
 - JWT 토큰 기반 인증
 - RESTful API 설계
 
-## 📊 데이터베이스 설계
-
-### Users 테이블
-```sql
-CREATE TABLE users (
-    id BIGINT AUTO_INCREMENT PRIMARY KEY,
-    email VARCHAR(255) UNIQUE NOT NULL,
-    name VARCHAR(255) NOT NULL,
-    password VARCHAR(255),
-    phone VARCHAR(255),
-    address TEXT,
-    provider VARCHAR(50),
-    provider_id VARCHAR(255),
-    social_providers TEXT,
-    role VARCHAR(20) DEFAULT 'USER',
-    created_on TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-```
-
 ## 📈 개발 히스토리
 
 ### Phase 1: 기본 OAuth2 구현

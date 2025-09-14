@@ -82,19 +82,46 @@ export default {
       this.showPassword = !this.showPassword;
     },
     async login() {
+      // 입력 검증
+      if (!this.email || !this.password) {
+        alert("이메일과 비밀번호를 입력해주세요.");
+        return;
+      }
+
+      if (!this.isValidEmail(this.email)) {
+        alert("올바른 이메일 형식을 입력해주세요.");
+        return;
+      }
+
       try {
-        const response = await axios.post("http://localhost:8888/users/login", null, {
+        const response = await axios.post("http://localhost:8888/api/users/login", null, {
           params: {
             email: this.email,
             password: this.password,
           },
         });
         console.log("로그인 성공:", response.data);
+        
+        // JWT 토큰을 로컬 스토리지에 저장
+        if (response.data.token) {
+          localStorage.setItem('token', response.data.token);
+          localStorage.setItem('user', JSON.stringify(response.data.user));
+        }
+        
         alert("로그인 성공!");
+        // 추후 메인 페이지로 리다이렉트 로직 추가 가능
       } catch (error) {
         console.error("로그인 실패:", error.response?.data || error.message);
-        alert("로그인 실패!");
+        if (error.response?.status === 401) {
+          alert("이메일 또는 비밀번호가 잘못되었습니다.");
+        } else {
+          alert("로그인 중 오류가 발생했습니다. 다시 시도해주세요.");
+        }
       }
+    },
+    isValidEmail(email) {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      return emailRegex.test(email);
     },
     naverLogin() {
       // 네이버 OAuth2 로그인 URL로 리다이렉트

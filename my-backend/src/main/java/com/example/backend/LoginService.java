@@ -28,10 +28,21 @@ public class LoginService {
         return loginRepository.save(user);
     }
 
-    // 로그인 (단순 검증)
+    // 로그인 (DB에서 사용자 검증)
     public Optional<User> login(String email, String rawPassword) {
-        return loginRepository.findByEmail(email)
-                .filter(u -> passwordEncoder.matches(rawPassword, u.getPassword()));
+        if (email == null || email.trim().isEmpty() || rawPassword == null || rawPassword.trim().isEmpty()) {
+            return Optional.empty();
+        }
+        
+        return loginRepository.findByEmail(email.trim())
+                .filter(user -> {
+                    // 소셜 로그인 사용자는 일반 로그인 불가
+                    if (user.getPassword() == null) {
+                        return false;
+                    }
+                    // 비밀번호 검증
+                    return passwordEncoder.matches(rawPassword, user.getPassword());
+                });
     }
 
     // 사용자 조회
