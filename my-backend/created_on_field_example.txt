@@ -1,0 +1,15 @@
+// JPA 엔티티에서 created_on 컬럼 매핑 예시
+
+// 1. 필요한 import 추가
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
+import java.time.LocalDateTime;
+
+// 2. 엔티티 클래스 내부에 필드 추가
+@CreationTimestamp
+@Column(name = "created_on", nullable = false, updatable = false)
+private LocalDateTime createdOn;
+
+@UpdateTimestamp
+@Column(name = "updated_on")
+private LocalDateTime updatedOn;
