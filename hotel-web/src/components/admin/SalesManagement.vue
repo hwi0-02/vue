@@ -2,36 +2,36 @@
   <div class="sales-management">
     <div class="page-header">
       <h1>매출·수수료 관리</h1>
-      <p>지정된 기간의 매출과 수수료를 요약하여 확인합니다.</p>
+      <p class="page-description">지정된 기간의 매출과 수수료를 요약하여 확인합니다.</p>
     </div>
 
     <!-- 날짜 범위 선택 -->
     <div class="date-filter">
       <div class="date-inputs">
         <div class="date-group">
-          <label for="fromDate">시작일:</label>
-          <input 
-            id="fromDate"
-            v-model="dateRange.from" 
-            type="date" 
+          <label>시작일</label>
+          <input
+            type="date"
             class="date-input"
+            v-model="dateRange.from"
+            :max="dateRange.to || undefined"
+            :disabled="loading"
           />
         </div>
         <div class="date-group">
-          <label for="toDate">종료일:</label>
-          <input 
-            id="toDate"
-            v-model="dateRange.to" 
-            type="date" 
+          <label>종료일</label>
+          <input
+            type="date"
             class="date-input"
+            v-model="dateRange.to"
+            :min="dateRange.from || undefined"
+            :disabled="loading"
           />
         </div>
-        <button @click="searchSales" class="search-btn" :disabled="loading">
-          {{ loading ? '조회중...' : '조회' }}
-        </button>
-        <button @click="setQuickDate(7)" class="quick-btn">최근 7일</button>
-        <button @click="setQuickDate(30)" class="quick-btn">최근 30일</button>
-        <button @click="setQuickDate(90)" class="quick-btn">최근 3개월</button>
+        <button class="search-btn" @click="searchSales" :disabled="loading">조회</button>
+        <button class="quick-btn" @click="setQuickDate(7)" :disabled="loading">최근 7일</button>
+        <button class="quick-btn" @click="setQuickDate(30)" :disabled="loading">최근 30일</button>
+        <button class="quick-btn" @click="setQuickDate(90)" :disabled="loading">최근 3개월</button>
       </div>
     </div>
 
@@ -40,40 +40,33 @@
       <div class="card total-revenue">
         <div class="card-header">
           <h3>총 매출</h3>
-          <i class="icon">💰</i>
         </div>
         <div class="card-content">
           <p class="amount">{{ formatCurrency(salesData.totalRevenue) }}</p>
           <small>{{ dateRange.from }} ~ {{ dateRange.to }}</small>
         </div>
       </div>
-
       <div class="card platform-fee">
         <div class="card-header">
           <h3>플랫폼 수익</h3>
-          <i class="icon">📊</i>
         </div>
         <div class="card-content">
           <p class="amount">{{ formatCurrency(salesData.platformFeeAmount) }}</p>
           <small>수수료율 10%</small>
         </div>
       </div>
-
       <div class="card hotels-count">
         <div class="card-header">
           <h3>참여 호텔</h3>
-          <i class="icon">🏨</i>
         </div>
         <div class="card-content">
           <p class="amount">{{ salesData.hotelSettlements.length }}</p>
           <small>개 호텔</small>
         </div>
       </div>
-
       <div class="card avg-settlement">
         <div class="card-header">
           <h3>평균 정산액</h3>
-          <i class="icon">📈</i>
         </div>
         <div class="card-content">
           <p class="amount">{{ formatCurrency(averageSettlement) }}</p>
@@ -87,9 +80,9 @@
       <div class="section-header">
         <h2>호텔별 정산 내역</h2>
         <div class="table-controls">
-          <input 
-            v-model="searchHotel" 
-            type="text" 
+          <input
+            v-model="searchHotel"
+            type="text"
             placeholder="호텔명 검색"
             class="search-input"
           />
@@ -106,31 +99,31 @@
         <table class="settlements-table">
           <thead>
             <tr>
-              <th>순위</th>
-              <th>호텔명</th>
-              <th>총 매출</th>
-              <th>정산 금액 (90%)</th>
-              <th>플랫폼 수수료 (10%)</th>
-              <th>예약 건수</th>
-              <th>건당 평균 매출</th>
+              <th style="width: 80px;">순위</th>
+              <th style="min-width: 220px;">호텔명</th>
+              <th style="min-width: 140px; text-align:right;">총 매출</th>
+              <th style="min-width: 160px; text-align:right;">정산 금액 (90%)</th>
+              <th style="min-width: 160px; text-align:right;">플랫폼 수수료 (10%)</th>
+              <th style="width: 120px; text-align:center;">예약 건수</th>
+              <th style="min-width: 160px; text-align:right;">건당 평균 매출</th>
             </tr>
           </thead>
           <tbody>
-            <tr v-for="(settlement, index) in filteredSettlements" :key="settlement.hotelId">
+            <tr v-for="(row, index) in filteredSettlements" :key="row.hotelId">
               <td>
                 <span class="rank" :class="getRankClass(index)">{{ index + 1 }}</span>
               </td>
               <td>
                 <div class="hotel-info">
-                  <strong>{{ settlement.hotelName }}</strong>
-                  <small>ID: {{ settlement.hotelId }}</small>
+                  <strong>{{ row.hotelName }}</strong>
+                  <small>ID: {{ row.hotelId }}</small>
                 </div>
               </td>
-              <td class="amount-cell">{{ formatCurrency(settlement.totalRevenue) }}</td>
-              <td class="amount-cell settlement-amount">{{ formatCurrency(settlement.settlementAmount) }}</td>
-              <td class="amount-cell platform-fee">{{ formatCurrency(getPlatformFee(settlement.totalRevenue)) }}</td>
-              <td class="text-center">{{ settlement.reservationCount }}</td>
-              <td class="amount-cell">{{ formatCurrency(getAveragePerReservation(settlement)) }}</td>
+              <td class="amount-cell">{{ formatCurrency(row.totalRevenue) }}</td>
+              <td class="amount-cell settlement-amount">{{ formatCurrency(row.settlementAmount) }}</td>
+              <td class="amount-cell platform-fee">{{ formatCurrency(getPlatformFee(row.totalRevenue)) }}</td>
+              <td class="text-center">{{ row.reservationCount }}</td>
+              <td class="amount-cell">{{ formatCurrency(getAveragePerReservation(row)) }}</td>
             </tr>
           </tbody>
         </table>
@@ -155,7 +148,7 @@
 
     <!-- 빈 데이터 메시지 -->
     <div v-else-if="salesData && salesData.hotelSettlements.length === 0" class="empty-message">
-      <div class="empty-icon">📊</div>
+      <div class="empty-icon"></div>
       <h3>선택한 기간에 매출 데이터가 없습니다</h3>
       <p>다른 날짜 범위를 선택해보세요.</p>
     </div>
@@ -168,7 +161,7 @@
 
     <!-- 초기 상태 -->
     <div v-else class="initial-message">
-      <div class="initial-icon">📅</div>
+      <div class="initial-icon"></div>
       <h3>날짜 범위를 선택하고 조회 버튼을 클릭하세요</h3>
       <p>매출·수수료 관리를 위한 데이터를 조회할 수 있습니다.</p>
     </div>
@@ -231,7 +224,7 @@ export default {
           to: dateRange.to
         })
 
-        const response = await fetch(`/api/admin/sales?${params}`, {
+  const response = await fetch(`/api/admin/sales?${params}`, {
           headers: {
             'Authorization': `Bearer ${localStorage.getItem('token')}`
           }
@@ -242,7 +235,6 @@ export default {
         salesData.value = await response.json()
         
       } catch (error) {
-        console.error('매출 데이터 조회 오류:', error)
         alert('매출 데이터를 불러오는데 실패했습니다.')
       } finally {
         loading.value = false
@@ -355,21 +347,6 @@ export default {
   padding: 20px;
 }
 
-.page-header {
-  margin-bottom: 30px;
-}
-
-.page-header h1 {
-  margin: 0 0 8px 0;
-  font-size: 28px;
-  color: #333;
-}
-
-.page-header p {
-  margin: 0;
-  color: #666;
-  font-size: 14px;
-}
 
 /* 날짜 필터 */
 .date-filter {
@@ -438,12 +415,7 @@ export default {
 }
 
 /* 요약 카드 */
-.summary-cards {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-  gap: 20px;
-  margin-bottom: 30px;
-}
+.summary-cards { margin-bottom: 30px; }
 
 .card {
   background: white;
@@ -689,5 +661,7 @@ export default {
     flex-direction: column;
     gap: 15px;
   }
+
+  /* 모바일 규칙은 전역 유틸리티에 정의됨 */
 }
 </style>

@@ -1,45 +1,35 @@
 <template>
   <div class="coupon-management">
     <div class="management-header">
-      <h2><i class="fas fa-ticket-alt"></i> 쿠폰 관리</h2>
-      <button class="btn btn-primary" @click="showCreateModal = true">
-        <i class="fas fa-plus"></i> 쿠폰 생성
-      </button>
+      <h2>쿠폰 관리</h2>
+      <button class="btn btn-primary" @click="showCreateModal = true">쿠폰 생성</button>
     </div>
 
     <!-- 통계 카드 -->
     <div class="stats-cards">
       <div class="stat-card">
-        <div class="stat-icon total">
-          <i class="fas fa-ticket-alt"></i>
-        </div>
+        <div class="stat-icon total"></div>
         <div class="stat-content">
           <h3>{{ stats.totalCoupons || 0 }}</h3>
           <p>전체 쿠폰</p>
         </div>
       </div>
       <div class="stat-card">
-        <div class="stat-icon active">
-          <i class="fas fa-check-circle"></i>
-        </div>
+        <div class="stat-icon active"></div>
         <div class="stat-content">
           <h3>{{ stats.activeCoupons || 0 }}</h3>
           <p>활성 쿠폰</p>
         </div>
       </div>
       <div class="stat-card">
-        <div class="stat-icon inactive">
-          <i class="fas fa-pause-circle"></i>
-        </div>
+        <div class="stat-icon inactive"></div>
         <div class="stat-content">
           <h3>{{ stats.inactiveCoupons || 0 }}</h3>
           <p>비활성 쿠폰</p>
         </div>
       </div>
       <div class="stat-card">
-        <div class="stat-icon expired">
-          <i class="fas fa-times-circle"></i>
-        </div>
+        <div class="stat-icon expired"></div>
         <div class="stat-content">
           <h3>{{ stats.expiredCoupons || 0 }}</h3>
           <p>만료된 쿠폰</p>
@@ -85,9 +75,7 @@
           />
         </div>
         <div class="filter-group">
-          <button class="btn btn-secondary" @click="resetFilters">
-            <i class="fas fa-refresh"></i> 초기화
-          </button>
+          <button class="btn btn-secondary" @click="resetFilters">초기화</button>
         </div>
       </div>
     </div>
@@ -151,28 +139,18 @@
             <td>{{ formatDate(coupon.createdAt) }}</td>
             <td>
               <div class="action-buttons">
-                <button 
-                  class="btn btn-sm btn-outline"
-                  @click="editCoupon(coupon)"
-                  title="수정"
-                >
-                  <i class="fas fa-edit"></i>
-                </button>
+                <button class="btn btn-sm btn-outline" @click="editCoupon(coupon)" title="수정">수정</button>
                 <button 
                   class="btn btn-sm btn-warning"
                   @click="toggleCouponStatus(coupon)"
                   :title="coupon.status === 'ACTIVE' ? '비활성화' : '활성화'"
-                >
-                  <i :class="coupon.status === 'ACTIVE' ? 'fas fa-pause' : 'fas fa-play'"></i>
-                </button>
+                >{{ coupon.status === 'ACTIVE' ? '비활성화' : '활성화' }}</button>
                 <button 
                   class="btn btn-sm btn-danger"
                   @click="deleteCoupon(coupon)"
                   :disabled="coupon.usedCount > 0"
                   title="삭제"
-                >
-                  <i class="fas fa-trash"></i>
-                </button>
+                >삭제</button>
               </div>
             </td>
           </tr>
@@ -225,13 +203,8 @@
     <div v-if="showCreateModal || showEditModal" class="modal-overlay" @click="closeModals">
       <div class="modal-content" @click.stop>
         <div class="modal-header">
-          <h3>
-            <i class="fas fa-ticket-alt"></i>
-            {{ showCreateModal ? '쿠폰 생성' : '쿠폰 수정' }}
-          </h3>
-          <button class="modal-close" @click="closeModals">
-            <i class="fas fa-times"></i>
-          </button>
+          <h3>{{ showCreateModal ? '쿠폰 생성' : '쿠폰 수정' }}</h3>
+          <button class="modal-close" @click="closeModals">×</button>
         </div>
         
         <form @submit.prevent="showCreateModal ? createCoupon() : updateCoupon()">
@@ -440,7 +413,7 @@ export default {
           )
         }
 
-        const response = await api.get('/api/admin/coupons', { params })
+  const response = await api.get('/admin/coupons', { params })
         
         coupons.value = response.data.content
         Object.assign(pagination, {
@@ -463,7 +436,7 @@ export default {
     // 쿠폰 통계 로드
     const loadStats = async () => {
       try {
-        const response = await api.get('/api/admin/coupons/stats')
+  const response = await api.get('/admin/coupons/stats')
         stats.value = response.data
       } catch (error) {
         console.error('쿠폰 통계 로드 실패:', error)
@@ -482,7 +455,7 @@ export default {
           }
         })
 
-        await api.post('/api/admin/coupons', formData)
+  await api.post('/admin/coupons', formData)
         
         alert('쿠폰이 성공적으로 생성되었습니다.')
         closeModals()
@@ -508,7 +481,7 @@ export default {
           }
         })
 
-        await api.put(`/api/admin/coupons/${editingCoupon.value.id}`, formData)
+  await api.put(`/admin/coupons/${editingCoupon.value.id}`, formData)
         
         alert('쿠폰이 성공적으로 수정되었습니다.')
         closeModals()
@@ -528,7 +501,7 @@ export default {
       if (!confirm(`정말로 이 쿠폰을 ${action}하시겠습니까?`)) return
 
       try {
-        await api.put(`/api/admin/coupons/${coupon.id}/status`, {
+  await api.put(`/admin/coupons/${coupon.id}/status`, {
           status: newStatus
         })
         
@@ -551,7 +524,7 @@ export default {
       if (!confirm('정말로 이 쿠폰을 삭제하시겠습니까?')) return
 
       try {
-        await api.delete(`/api/admin/coupons/${coupon.id}`)
+  await api.delete(`/admin/coupons/${coupon.id}`)
         
         alert('쿠폰이 성공적으로 삭제되었습니다.')
         loadCoupons()

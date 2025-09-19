@@ -2,69 +2,61 @@
   <div class="reservation-monitoring">
     <div class="page-header">
       <h1>예약 관리</h1>
-      <p>호텔 예약 및 결제 상태를 모니터링하고 관리합니다.</p>
+      <p class="page-description">호텔 예약 및 결제 상태를 모니터링하고 관리합니다.</p>
     </div>
 
     <!-- 검색 및 필터 -->
-    <div class="filters">
-      <div class="filter-row">
-        <input 
-          v-model="filters.hotelName" 
-          type="text" 
-          placeholder="호텔명 검색"
-          class="filter-input"
-        />
-        <input 
-          v-model="filters.userName" 
-          type="text" 
-          placeholder="예약자명 검색"
-          class="filter-input"
-        />
-        <select v-model="filters.reservationStatus" class="filter-select">
-          <option value="">예약 상태 전체</option>
-          <option value="PENDING">대기중</option>
-          <option value="CONFIRMED">확정</option>
-          <option value="CHECKED_IN">체크인</option>
-          <option value="CHECKED_OUT">체크아웃</option>
-          <option value="CANCELLED">취소</option>
-          <option value="NO_SHOW">노쇼</option>
-        </select>
-        <select v-model="filters.paymentStatus" class="filter-select">
-          <option value="">결제 상태 전체</option>
-          <option value="PENDING">결제대기</option>
-          <option value="COMPLETED">결제완료</option>
-          <option value="FAILED">결제실패</option>
-          <option value="CANCELLED">결제취소</option>
-          <option value="REFUNDED">환불완료</option>
-        </select>
-        <button @click="searchReservations" class="search-btn">검색</button>
-        <button @click="resetFilters" class="reset-btn">초기화</button>
-      </div>
+    <div class="search-section mb-16">
+      <form class="search-form" @submit.prevent="searchReservations">
+        <div class="search-group">
+          <label>호텔명</label>
+          <input v-model="filters.hotelName" placeholder="호텔명 검색" @keyup.enter="searchReservations" class="search-input" />
+        </div>
+        <div class="search-group">
+          <label>예약자명</label>
+          <input v-model="filters.userName" placeholder="예약자명 검색" @keyup.enter="searchReservations" class="search-input" />
+        </div>
+        <div class="search-group">
+          <label>예약 상태</label>
+          <select v-model="filters.reservationStatus" class="search-select">
+            <option value="">전체</option>
+            <option value="PENDING">대기중</option>
+            <option value="CONFIRMED">확정</option>
+            <option value="CHECKED_IN">체크인</option>
+            <option value="CHECKED_OUT">체크아웃</option>
+            <option value="CANCELLED">취소</option>
+            <option value="NO_SHOW">노쇼</option>
+          </select>
+        </div>
+        <div class="search-group">
+          <label>결제 상태</label>
+          <select v-model="filters.paymentStatus" class="search-select">
+            <option value="">전체</option>
+            <option value="PENDING">결제대기</option>
+            <option value="COMPLETED">결제완료</option>
+            <option value="FAILED">결제실패</option>
+            <option value="CANCELLED">결제취소</option>
+            <option value="REFUNDED">환불완료</option>
+          </select>
+        </div>
+        <div class="search-buttons">
+          <button class="btn btn-primary" type="submit">검색</button>
+          <button class="btn btn-secondary" type="button" @click="resetFilters">초기화</button>
+        </div>
+      </form>
     </div>
 
     <!-- 통계 카드 -->
-    <div class="stats-grid">
-      <div class="stat-card">
-        <h3>전체 예약</h3>
-        <p class="stat-number">{{ totalReservations }}</p>
-      </div>
-      <div class="stat-card">
-        <h3>확정 예약</h3>
-        <p class="stat-number confirmed">{{ confirmedReservations }}</p>
-      </div>
-      <div class="stat-card">
-        <h3>취소 예약</h3>
-        <p class="stat-number cancelled">{{ cancelledReservations }}</p>
-      </div>
-      <div class="stat-card">
-        <h3>결제 완료</h3>
-        <p class="stat-number paid">{{ paidReservations }}</p>
-      </div>
+    <div class="stats-row mb-16">
+      <div class="stat-card"><div>전체 예약</div><div class="stat-number">{{ totalReservations }}</div></div>
+      <div class="stat-card"><div>확정 예약</div><div class="stat-number confirmed">{{ confirmedReservations }}</div></div>
+      <div class="stat-card"><div>취소 예약</div><div class="stat-number cancelled">{{ cancelledReservations }}</div></div>
+      <div class="stat-card"><div>결제 완료</div><div class="stat-number paid">{{ paidReservations }}</div></div>
     </div>
 
     <!-- 예약 목록 테이블 -->
-    <div class="table-container">
-      <table class="reservation-table">
+    <div class="table-section">
+      <table class="reservations-table">
         <thead>
           <tr>
             <th>예약번호</th>
@@ -73,7 +65,7 @@
             <th>예약자</th>
             <th>체크인</th>
             <th>체크아웃</th>
-            <th>예약금액</th>
+            <th class="text-right">예약금액</th>
             <th>예약상태</th>
             <th>결제상태</th>
             <th>예약일시</th>
@@ -81,43 +73,27 @@
           </tr>
         </thead>
         <tbody>
-          <tr v-for="reservation in reservations" :key="reservation.reservationId">
-            <td>{{ reservation.reservationId }}</td>
-            <td>{{ reservation.hotelName }}</td>
-            <td>{{ reservation.roomName }} ({{ reservation.roomType }})</td>
+          <tr v-for="row in reservations" :key="row.reservationId">
+            <td>{{ row.reservationId }}</td>
+            <td>{{ row.hotelName }}</td>
+            <td>{{ row.roomName }} ({{ row.roomType }})</td>
             <td>
-              <div>
-                <div>{{ reservation.userName }}</div>
-                <small>{{ reservation.userEmail }}</small>
-              </div>
+              <div>{{ row.userName }}</div>
+              <small class="muted">{{ row.userEmail }}</small>
             </td>
-            <td>{{ formatDate(reservation.checkInDate) }}</td>
-            <td>{{ formatDate(reservation.checkOutDate) }}</td>
-            <td>{{ formatCurrency(reservation.totalAmount) }}</td>
-            <td>
-              <span :class="['status-badge', getReservationStatusClass(reservation.reservationStatus)]">
-                {{ getReservationStatusText(reservation.reservationStatus) }}
-              </span>
-            </td>
-            <td>
-              <span :class="['status-badge', getPaymentStatusClass(reservation.paymentStatus)]">
-                {{ getPaymentStatusText(reservation.paymentStatus) }}
-              </span>
-            </td>
-            <td>{{ formatDateTime(reservation.reservationCreatedAt) }}</td>
-            <td>
-              <button @click="viewReservationDetail(reservation)" class="action-btn view-btn">
-                상세보기
-              </button>
-            </td>
+            <td>{{ formatDate(row.checkInDate) }}</td>
+            <td>{{ formatDate(row.checkOutDate) }}</td>
+            <td class="text-right">{{ formatCurrency(row.totalAmount) }}</td>
+            <td>{{ getReservationStatusText(row.reservationStatus) }}</td>
+            <td>{{ getPaymentStatusText(row.paymentStatus) }}</td>
+            <td>{{ formatDateTime(row.reservationCreatedAt) }}</td>
+            <td><button class="btn btn-secondary btn-sm" @click="viewReservationDetail(row)">상세보기</button></td>
+          </tr>
+          <tr v-if="reservations.length === 0">
+            <td colspan="11" class="muted center">조건에 맞는 예약이 없습니다.</td>
           </tr>
         </tbody>
       </table>
-
-      <!-- 빈 데이터 메시지 -->
-      <div v-if="reservations.length === 0" class="empty-message">
-        <p>조건에 맞는 예약이 없습니다.</p>
-      </div>
     </div>
 
     <!-- 페이지네이션 -->
@@ -143,124 +119,63 @@
       </button>
     </div>
 
-    <!-- 예약 상세 모달 -->
+    <!-- 예약 상세 다이얼로그 -->
     <div v-if="showDetailModal" class="modal-overlay" @click="closeDetailModal">
-      <div class="modal-content" @click.stop>
+      <div class="modal" @click.stop>
         <div class="modal-header">
-          <h2>예약 상세 정보</h2>
-          <button @click="closeDetailModal" class="close-btn">×</button>
+          <h3>예약 상세 정보</h3>
+          <button class="close" @click="closeDetailModal">×</button>
         </div>
-        
         <div class="modal-body" v-if="selectedReservation">
           <div class="detail-grid">
-            <!-- 예약 정보 -->
-            <div class="detail-section">
-              <h3>예약 정보</h3>
-              <div class="detail-item">
-                <label>예약번호:</label>
-                <span>{{ selectedReservation.reservationId }}</span>
+            <section class="detail-card">
+              <h4>예약 정보</h4>
+              <div class="desc-grid">
+                <div><label>예약번호</label><span>{{ selectedReservation.reservationId }}</span></div>
+                <div><label>예약상태</label><span>{{ getReservationStatusText(selectedReservation.reservationStatus) }}</span></div>
+                <div><label>체크인</label><span>{{ formatDate(selectedReservation.checkInDate) }}</span></div>
+                <div><label>체크아웃</label><span>{{ formatDate(selectedReservation.checkOutDate) }}</span></div>
+                <div><label>투숙인원</label><span>{{ selectedReservation.guestCount }}명</span></div>
+                <div><label>총 금액</label><span>{{ formatCurrency(selectedReservation.totalAmount) }}</span></div>
+                <div v-if="selectedReservation.specialRequests" class="span-2"><label>특별요청</label><span>{{ selectedReservation.specialRequests }}</span></div>
+                <div class="span-2"><label>예약일시</label><span>{{ formatDateTime(selectedReservation.reservationCreatedAt) }}</span></div>
               </div>
-              <div class="detail-item">
-                <label>예약상태:</label>
-                <span :class="['status-badge', getReservationStatusClass(selectedReservation.reservationStatus)]">
-                  {{ getReservationStatusText(selectedReservation.reservationStatus) }}
-                </span>
-              </div>
-              <div class="detail-item">
-                <label>체크인:</label>
-                <span>{{ formatDate(selectedReservation.checkInDate) }}</span>
-              </div>
-              <div class="detail-item">
-                <label>체크아웃:</label>
-                <span>{{ formatDate(selectedReservation.checkOutDate) }}</span>
-              </div>
-              <div class="detail-item">
-                <label>투숙인원:</label>
-                <span>{{ selectedReservation.guestCount }}명</span>
-              </div>
-              <div class="detail-item">
-                <label>총 금액:</label>
-                <span>{{ formatCurrency(selectedReservation.totalAmount) }}</span>
-              </div>
-              <div class="detail-item" v-if="selectedReservation.specialRequests">
-                <label>특별요청:</label>
-                <span>{{ selectedReservation.specialRequests }}</span>
-              </div>
-              <div class="detail-item">
-                <label>예약일시:</label>
-                <span>{{ formatDateTime(selectedReservation.reservationCreatedAt) }}</span>
-              </div>
-            </div>
+            </section>
 
-            <!-- 결제 정보 -->
-            <div class="detail-section">
-              <h3>결제 정보</h3>
-              <div class="detail-item" v-if="selectedReservation.paymentId">
-                <label>결제번호:</label>
-                <span>{{ selectedReservation.paymentId }}</span>
+            <section class="detail-card">
+              <h4>결제 정보</h4>
+              <div class="desc-grid">
+                <div v-if="selectedReservation.paymentId"><label>결제번호</label><span>{{ selectedReservation.paymentId }}</span></div>
+                <div><label>결제상태</label><span>{{ getPaymentStatusText(selectedReservation.paymentStatus) }}</span></div>
+                <div v-if="selectedReservation.paymentMethod"><label>결제수단</label><span>{{ getPaymentMethodText(selectedReservation.paymentMethod) }}</span></div>
+                <div v-if="selectedReservation.paidAmount"><label>결제금액</label><span>{{ formatCurrency(selectedReservation.paidAmount) }}</span></div>
+                <div v-if="selectedReservation.paymentCreatedAt" class="span-2"><label>결제일시</label><span>{{ formatDateTime(selectedReservation.paymentCreatedAt) }}</span></div>
               </div>
-              <div class="detail-item">
-                <label>결제상태:</label>
-                <span :class="['status-badge', getPaymentStatusClass(selectedReservation.paymentStatus)]">
-                  {{ getPaymentStatusText(selectedReservation.paymentStatus) }}
-                </span>
-              </div>
-              <div class="detail-item" v-if="selectedReservation.paymentMethod">
-                <label>결제수단:</label>
-                <span>{{ getPaymentMethodText(selectedReservation.paymentMethod) }}</span>
-              </div>
-              <div class="detail-item" v-if="selectedReservation.paidAmount">
-                <label>결제금액:</label>
-                <span>{{ formatCurrency(selectedReservation.paidAmount) }}</span>
-              </div>
-              <div class="detail-item" v-if="selectedReservation.paymentCreatedAt">
-                <label>결제일시:</label>
-                <span>{{ formatDateTime(selectedReservation.paymentCreatedAt) }}</span>
-              </div>
-            </div>
+            </section>
 
-            <!-- 고객 정보 -->
-            <div class="detail-section">
-              <h3>고객 정보</h3>
-              <div class="detail-item">
-                <label>고객번호:</label>
-                <span>{{ selectedReservation.userId }}</span>
+            <section class="detail-card">
+              <h4>고객 정보</h4>
+              <div class="desc-grid">
+                <div><label>고객번호</label><span>{{ selectedReservation.userId }}</span></div>
+                <div><label>고객명</label><span>{{ selectedReservation.userName }}</span></div>
+                <div class="span-2"><label>이메일</label><span>{{ selectedReservation.userEmail }}</span></div>
               </div>
-              <div class="detail-item">
-                <label>고객명:</label>
-                <span>{{ selectedReservation.userName }}</span>
-              </div>
-              <div class="detail-item">
-                <label>이메일:</label>
-                <span>{{ selectedReservation.userEmail }}</span>
-              </div>
-            </div>
+            </section>
 
-            <!-- 호텔/객실 정보 -->
-            <div class="detail-section">
-              <h3>호텔/객실 정보</h3>
-              <div class="detail-item">
-                <label>호텔번호:</label>
-                <span>{{ selectedReservation.hotelId }}</span>
+            <section class="detail-card">
+              <h4>호텔/객실 정보</h4>
+              <div class="desc-grid">
+                <div><label>호텔번호</label><span>{{ selectedReservation.hotelId }}</span></div>
+                <div><label>호텔명</label><span>{{ selectedReservation.hotelName }}</span></div>
+                <div><label>객실번호</label><span>{{ selectedReservation.roomId }}</span></div>
+                <div><label>객실명</label><span>{{ selectedReservation.roomName }}</span></div>
+                <div class="span-2"><label>객실타입</label><span>{{ selectedReservation.roomType }}</span></div>
               </div>
-              <div class="detail-item">
-                <label>호텔명:</label>
-                <span>{{ selectedReservation.hotelName }}</span>
-              </div>
-              <div class="detail-item">
-                <label>객실번호:</label>
-                <span>{{ selectedReservation.roomId }}</span>
-              </div>
-              <div class="detail-item">
-                <label>객실명:</label>
-                <span>{{ selectedReservation.roomName }}</span>
-              </div>
-              <div class="detail-item">
-                <label>객실타입:</label>
-                <span>{{ selectedReservation.roomType }}</span>
-              </div>
-            </div>
+            </section>
           </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn" @click="closeDetailModal">닫기</button>
         </div>
       </div>
     </div>
@@ -312,7 +227,7 @@ export default {
         if (filters.reservationStatus) params.append('reservationStatus', filters.reservationStatus)
         if (filters.paymentStatus) params.append('paymentStatus', filters.paymentStatus)
 
-        const response = await fetch(`/api/admin/reservations?${params}`, {
+  const response = await fetch(`/api/admin/reservations?${params}`, {
           headers: {
             'Authorization': `Bearer ${localStorage.getItem('token')}`
           }
@@ -330,7 +245,6 @@ export default {
         updateStatistics()
         
       } catch (error) {
-        console.error('예약 목록 조회 오류:', error)
         alert('예약 목록을 불러오는데 실패했습니다.')
       }
     }
@@ -362,7 +276,7 @@ export default {
     // 예약 상세 보기
     const viewReservationDetail = async (reservation) => {
       try {
-        const response = await fetch(`/api/admin/reservations/${reservation.reservationId}`, {
+  const response = await fetch(`/api/admin/reservations/${reservation.reservationId}`, {
           headers: {
             'Authorization': `Bearer ${localStorage.getItem('token')}`
           }
@@ -374,7 +288,6 @@ export default {
         showDetailModal.value = true
         
       } catch (error) {
-        console.error('예약 상세 조회 오류:', error)
         alert('예약 상세 정보를 불러오는데 실패했습니다.')
       }
     }
@@ -396,6 +309,15 @@ export default {
         'NO_SHOW': '노쇼'
       }
       return statusMap[status] || status
+    }
+
+    const reservationTagType = (status) => {
+      const map = { PENDING: 'warning', CONFIRMED: 'success', CHECKED_IN: 'info', CHECKED_OUT: 'info', CANCELLED: 'danger', NO_SHOW: 'danger' }
+      return map[status] || 'info'
+    }
+    const paymentTagType = (status) => {
+      const map = { PENDING: 'warning', COMPLETED: 'success', FAILED: 'danger', CANCELLED: 'info', REFUNDED: 'danger' }
+      return map[status] || 'info'
     }
 
     // 예약 상태 클래스
@@ -510,133 +432,38 @@ export default {
   padding: 20px;
 }
 
-.page-header {
-  margin-bottom: 30px;
-}
 
-.page-header h1 {
-  margin: 0 0 8px 0;
-  font-size: 28px;
-  color: #333;
-}
-
-.page-header p {
-  margin: 0;
-  color: #666;
-  font-size: 14px;
-}
-
-/* 필터 섹션 */
-.filters {
-  background: white;
-  padding: 20px;
-  border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-  margin-bottom: 20px;
-}
-
-.filter-row {
-  display: flex;
-  gap: 15px;
-  align-items: center;
-  flex-wrap: wrap;
-}
-
-.filter-input,
-.filter-select {
-  padding: 8px 12px;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  font-size: 14px;
-  min-width: 150px;
-}
-
-.search-btn,
-.reset-btn {
-  padding: 8px 16px;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 14px;
-}
-
-.search-btn {
-  background-color: #007bff;
-  color: white;
-}
-
-.reset-btn {
-  background-color: #6c757d;
-  color: white;
-}
+/* 검색 섹션 */
+.search-section { background: #fff; padding: 16px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.06); }
+.search-form { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; align-items: end; }
+.search-group { display: flex; flex-direction: column; gap: 6px; }
+.search-input, .search-select { padding: 8px 10px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px; }
+.search-buttons { display: flex; gap: 8px; }
+.btn { padding: 8px 12px; border: 1px solid #ddd; background: #fff; border-radius: 6px; cursor: pointer; }
+.btn-primary { background: #2c7be5; color: #fff; border-color: #2c7be5; }
+.btn-secondary { background: #6c757d; color: #fff; border-color: #6c757d; }
+.btn-sm { padding: 4px 8px; font-size: 12px; }
+.mb-16 { margin-bottom: 16px; }
+.mb-12 { margin-bottom: 12px; }
+.muted { color: #777; }
+.center { text-align: center; }
+.text-right { text-align: right; }
 
 /* 통계 카드 */
-.stats-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 20px;
-  margin-bottom: 30px;
-}
-
-.stat-card {
-  background: white;
-  padding: 20px;
-  border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-  text-align: center;
-}
-
-.stat-card h3 {
-  margin: 0 0 10px 0;
-  font-size: 14px;
-  color: #666;
-}
-
-.stat-number {
-  font-size: 24px;
-  font-weight: bold;
-  margin: 0;
-  color: #333;
-}
+.stats-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; }
+.stat-card { background: #fff; padding: 16px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.06); text-align: center; }
+.stat-number { font-size: 22px; font-weight: 700; color: #333; }
 
 .stat-number.confirmed { color: #28a745; }
 .stat-number.cancelled { color: #dc3545; }
 .stat-number.paid { color: #007bff; }
 
 /* 테이블 */
-.table-container {
-  background: white;
-  border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-  overflow-x: auto;
-  margin-bottom: 20px;
-}
-
-.reservation-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 14px;
-}
-
-.reservation-table th {
-  background-color: #f8f9fa;
-  padding: 12px 8px;
-  text-align: left;
-  font-weight: 600;
-  color: #333;
-  border-bottom: 1px solid #dee2e6;
-  white-space: nowrap;
-}
-
-.reservation-table td {
-  padding: 12px 8px;
-  border-bottom: 1px solid #dee2e6;
-  vertical-align: top;
-}
-
-.reservation-table tr:hover {
-  background-color: #f8f9fa;
-}
+.table-section { background: #fff; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.06); overflow-x: auto; }
+.reservations-table { width: 100%; border-collapse: collapse; font-size: 14px; }
+.reservations-table th { background: #f8f9fa; padding: 12px 10px; text-align: left; color: #333; border-bottom: 1px solid #e9ecef; white-space: nowrap; }
+.reservations-table td { padding: 12px 10px; border-bottom: 1px solid #f1f3f5; }
+.reservations-table tr:hover { background-color: #f8f9fa; }
 
 /* 상태 배지 */
 .status-badge {
@@ -714,130 +541,25 @@ export default {
 }
 
 /* 모달 */
-.modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: rgba(0, 0, 0, 0.5);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 1000;
-}
+.modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: flex; justify-content: center; align-items: center; z-index: 1000; }
+.modal { background: #fff; border-radius: 10px; width: 92%; max-width: 900px; max-height: 90vh; overflow-y: auto; box-shadow: 0 10px 30px rgba(0,0,0,0.2); }
+.modal-header { display: flex; justify-content: space-between; align-items: center; padding: 16px 20px; border-bottom: 1px solid #eee; }
+.modal-header h3 { margin: 0; font-size: 18px; }
+.close { background: none; border: none; font-size: 22px; cursor: pointer; color: #666; }
+.modal-body { padding: 16px 20px; }
+.modal-footer { padding: 12px 20px; border-top: 1px solid #eee; display: flex; justify-content: flex-end; }
 
-.modal-content {
-  background: white;
-  border-radius: 8px;
-  width: 90%;
-  max-width: 800px;
-  max-height: 90vh;
-  overflow-y: auto;
-}
-
-.modal-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 20px;
-  border-bottom: 1px solid #dee2e6;
-}
-
-.modal-header h2 {
-  margin: 0;
-  font-size: 20px;
-}
-
-.close-btn {
-  background: none;
-  border: none;
-  font-size: 24px;
-  cursor: pointer;
-  color: #666;
-  padding: 0;
-  width: 30px;
-  height: 30px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.modal-body {
-  padding: 20px;
-}
-
-.detail-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-  gap: 30px;
-}
-
-.detail-section h3 {
-  margin: 0 0 15px 0;
-  font-size: 16px;
-  color: #333;
-  border-bottom: 2px solid #007bff;
-  padding-bottom: 5px;
-}
-
-.detail-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 10px;
-  padding: 8px 0;
-  border-bottom: 1px solid #f1f1f1;
-}
-
-.detail-item label {
-  font-weight: 500;
-  color: #666;
-  min-width: 100px;
-}
-
-.detail-item span {
-  text-align: right;
-  word-break: break-all;
-}
+.detail-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; }
+.detail-card { background: #fff; border: 1px solid #f1f3f5; border-radius: 8px; padding: 12px; }
+.detail-card h4 { margin: 0 0 10px 0; font-size: 15px; color: #333; }
+.desc-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 16px; }
+.desc-grid .span-2 { grid-column: span 2; }
+.desc-grid label { display: block; color: #666; font-size: 12px; }
+.desc-grid span { display: block; color: #222; font-weight: 500; }
 
 @media (max-width: 768px) {
-  .filter-row {
-    flex-direction: column;
-    align-items: stretch;
-  }
-
-  .filter-input,
-  .filter-select {
-    min-width: auto;
-    width: 100%;
-  }
-
-  .stats-grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
-
-  .reservation-table {
-    font-size: 12px;
-  }
-
-  .reservation-table th,
-  .reservation-table td {
-    padding: 8px 4px;
-  }
-
-  .detail-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .detail-item {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-
-  .detail-item span {
-    text-align: left;
-    margin-top: 4px;
-  }
+  .reservations-table { font-size: 12px; }
+  .reservations-table th, .reservations-table td { padding: 8px 6px; }
+  .desc-grid { grid-template-columns: 1fr; }
 }
 </style>

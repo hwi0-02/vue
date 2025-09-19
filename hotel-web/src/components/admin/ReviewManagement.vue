@@ -2,7 +2,7 @@
   <div class="review-management">
     <div class="page-header">
       <h1>리뷰 관리</h1>
-      <p>전체 리뷰를 조회하고 신고된 리뷰를 숨김 처리합니다.</p>
+      <p class="page-description">전체 리뷰를 조회하고 신고된 리뷰를 숨김 처리합니다.</p>
     </div>
 
     <!-- 필터 및 검색 -->
@@ -356,7 +356,7 @@ export default {
         if (filters.hotelName) params.append('hotelName', filters.hotelName)
         if (filters.userName) params.append('userName', filters.userName)
 
-        const response = await fetch(`/api/admin/reviews?${params}`, {
+  const response = await fetch(`/api/admin/reviews?${params}`, {
           headers: {
             'Authorization': `Bearer ${localStorage.getItem('token')}`
           }
@@ -374,7 +374,6 @@ export default {
         updateStatistics()
         
       } catch (error) {
-        console.error('리뷰 목록 조회 오류:', error)
         alert('리뷰 목록을 불러오는데 실패했습니다.')
       }
     }
@@ -410,7 +409,7 @@ export default {
     // 리뷰 상세 보기
     const viewReviewDetail = async (review) => {
       try {
-        const response = await fetch(`/api/admin/reviews/${review.reviewId}`, {
+  const response = await fetch(`/api/admin/reviews/${review.reviewId}`, {
           headers: {
             'Authorization': `Bearer ${localStorage.getItem('token')}`
           }
@@ -422,7 +421,6 @@ export default {
         showDetailModal.value = true
         
       } catch (error) {
-        console.error('리뷰 상세 조회 오류:', error)
         alert('리뷰 상세 정보를 불러오는데 실패했습니다.')
       }
     }
@@ -438,7 +436,7 @@ export default {
       if (!confirm('이 리뷰를 숨김 처리하시겠습니까?')) return
 
       try {
-        const response = await fetch(`/api/admin/reviews/${review.reviewId}/hide`, {
+  const response = await fetch(`/api/admin/reviews/${review.reviewId}/hide`, {
           method: 'PUT',
           headers: {
             'Authorization': `Bearer ${localStorage.getItem('token')}`
@@ -455,7 +453,6 @@ export default {
         }
         
       } catch (error) {
-        console.error('리뷰 숨김 처리 오류:', error)
         alert('리뷰 숨김 처리에 실패했습니다.')
       }
     }
@@ -465,7 +462,7 @@ export default {
       if (!confirm('이 리뷰의 숨김을 해제하시겠습니까?')) return
 
       try {
-        const response = await fetch(`/api/admin/reviews/${review.reviewId}/show`, {
+  const response = await fetch(`/api/admin/reviews/${review.reviewId}/show`, {
           method: 'PUT',
           headers: {
             'Authorization': `Bearer ${localStorage.getItem('token')}`
@@ -482,7 +479,6 @@ export default {
         }
         
       } catch (error) {
-        console.error('리뷰 숨김 해제 오류:', error)
         alert('리뷰 숨김 해제에 실패했습니다.')
       }
     }
@@ -492,7 +488,7 @@ export default {
       if (!confirm('이 리뷰를 신고 처리하시겠습니까?')) return
 
       try {
-        const response = await fetch(`/api/admin/reviews/${review.reviewId}/report`, {
+  const response = await fetch(`/api/admin/reviews/${review.reviewId}/report`, {
           method: 'PUT',
           headers: {
             'Authorization': `Bearer ${localStorage.getItem('token')}`
@@ -509,7 +505,6 @@ export default {
         }
         
       } catch (error) {
-        console.error('리뷰 신고 처리 오류:', error)
         alert('리뷰 신고 처리에 실패했습니다.')
       }
     }
@@ -573,21 +568,6 @@ export default {
   padding: 20px;
 }
 
-.page-header {
-  margin-bottom: 30px;
-}
-
-.page-header h1 {
-  margin: 0 0 8px 0;
-  font-size: 28px;
-  color: #333;
-}
-
-.page-header p {
-  margin: 0;
-  color: #666;
-  font-size: 14px;
-}
 
 /* 필터 섹션 */
 .filters {

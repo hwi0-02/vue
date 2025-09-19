@@ -41,6 +41,17 @@ public class LoginService {
             log.info("비밀번호 암호화 진행");
             user.setPassword(passwordEncoder.encode(user.getPassword().trim()));
         }
+
+        // 기본값 설정 (이메일/비번 가입은 LOCAL)
+        if (user.getProvider() == null) {
+            user.setProvider(User.Provider.LOCAL);
+        }
+        if (user.getRole() == null) {
+            user.setRole(User.Role.USER);
+        }
+        if (user.getStatus() == null) {
+            user.setStatus(User.Status.ACTIVE);
+        }
         
         log.info("사용자 저장 시도 - Email: {}", user.getEmail());
         User savedUser = loginRepository.saveAndFlush(user);

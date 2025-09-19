@@ -153,9 +153,10 @@ public class LoginController {
         userInfo.put("id", user.getId());
         userInfo.put("name", user.getName());
         userInfo.put("email", user.getEmail());
+        userInfo.put("role", user.getRole().toString());
         userInfo.put("provider", user.getProvider().toString());
         userInfo.put("profileImageUrl", user.getProfileImageUrl());
-        userInfo.put("createdOn", user.getCreatedOn());
+        userInfo.put("createdOn", user.getCreatedAt());
         return userInfo;
     }
 

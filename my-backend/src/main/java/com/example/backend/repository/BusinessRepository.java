@@ -21,11 +21,15 @@ public interface BusinessRepository extends JpaRepository<Business, Long> {
     
     long countByStatus(Business.BusinessStatus status);
     
-    @Query("SELECT DATE_FORMAT(b.createdAt, '%Y-%m'), COUNT(b) " +
+    @Query("SELECT FUNCTION('DATE_FORMAT', b.createdAt, '%Y-%m'), COUNT(b) " +
            "FROM Business b " +
            "WHERE b.createdAt BETWEEN :from AND :to " +
-           "GROUP BY DATE_FORMAT(b.createdAt, '%Y-%m') " +
-           "ORDER BY DATE_FORMAT(b.createdAt, '%Y-%m')")
+           "GROUP BY FUNCTION('DATE_FORMAT', b.createdAt, '%Y-%m') " +
+           "ORDER BY FUNCTION('DATE_FORMAT', b.createdAt, '%Y-%m')")
     List<Object[]> getMonthlySignupsByDateRange(@Param("from") LocalDateTime from,
                                                @Param("to") LocalDateTime to);
+
+    @Query("SELECT b.createdAt FROM Business b WHERE b.createdAt BETWEEN :from AND :to")
+    List<LocalDateTime> findCreationTimesByDateRange(@Param("from") LocalDateTime from,
+                                                     @Param("to") LocalDateTime to);
 }

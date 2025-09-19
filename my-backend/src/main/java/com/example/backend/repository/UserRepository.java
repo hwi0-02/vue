@@ -28,11 +28,15 @@ public interface UserRepository extends JpaRepository<User, Long> {
                                    @Param("role") User.Role role, 
                                    Pageable pageable);
     
-    @Query("SELECT DATE_FORMAT(u.createdAt, '%Y-%m'), COUNT(u) " +
+    @Query("SELECT FUNCTION('DATE_FORMAT', u.createdAt, '%Y-%m'), COUNT(u) " +
            "FROM User u " +
            "WHERE u.createdAt BETWEEN :from AND :to " +
-           "GROUP BY DATE_FORMAT(u.createdAt, '%Y-%m') " +
-           "ORDER BY DATE_FORMAT(u.createdAt, '%Y-%m')")
+           "GROUP BY FUNCTION('DATE_FORMAT', u.createdAt, '%Y-%m') " +
+           "ORDER BY FUNCTION('DATE_FORMAT', u.createdAt, '%Y-%m')")
     List<Object[]> getMonthlySignupsByDateRange(@Param("from") LocalDateTime from,
                                                @Param("to") LocalDateTime to);
+
+    @Query("SELECT u.createdAt FROM User u WHERE u.createdAt BETWEEN :from AND :to")
+    List<LocalDateTime> findCreationTimesByDateRange(@Param("from") LocalDateTime from,
+                                                     @Param("to") LocalDateTime to);
 }

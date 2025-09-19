@@ -80,7 +80,7 @@
             <h3>{{ hotel.name }}</h3>
             <p>{{ hotel.city }}</p>
             <p class="hotel-price">{{ hotel.price }}</p>
-            <p class="hotel-rating">⭐ {{ hotel.rating }}</p>
+            <p class="hotel-rating">{{ hotel.rating }}</p>
           </div>
         </div>
       </div>

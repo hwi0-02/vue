@@ -18,6 +18,8 @@ import com.example.backend.dto.StatusUpdateRequest;
 import com.example.backend.dto.UserAdminDto;
 import com.example.backend.repository.BusinessRepository;
 import com.example.backend.repository.CouponRepository;
+import com.example.backend.dto.PaymentAdminDto;
+import com.example.backend.domain.Payment;
 import com.example.backend.repository.PaymentRepository;
 import com.example.backend.repository.ReservationRepository;
 import com.example.backend.repository.ReviewRepository;
@@ -45,6 +47,7 @@ import java.util.Map;
 @RequestMapping("/api/admin")
 @RequiredArgsConstructor
 @Slf4j
+@CrossOrigin(origins = "http://localhost:5173")
 public class AdminController {
 
     private final UserRepository userRepository;
@@ -274,6 +277,45 @@ public class AdminController {
                 .build();
 
         return ResponseEntity.ok(summary);
+    }
+
+    // ============ 결제 관리 API ============
+
+    /**
+     * 결제 목록 조회 (검색 및 페이징)
+     */
+    @GetMapping("/payments")
+    public ResponseEntity<Page<PaymentAdminDto>> getPayments(
+            @RequestParam(required = false) String hotelName,
+            @RequestParam(required = false) String userName,
+            @RequestParam(required = false) Payment.PaymentStatus status,
+            @PageableDefault(size = 20) Pageable pageable) {
+
+        log.info("결제 목록 조회 - hotelName: {}, userName: {}, status: {}, page: {}",
+                hotelName, userName, status, pageable.getPageNumber());
+
+        Page<Payment> payments = paymentRepository.findPaymentsForAdmin(hotelName, userName, status, pageable);
+        Page<PaymentAdminDto> dtos = payments.map(PaymentAdminDto::from);
+        return ResponseEntity.ok(dtos);
+    }
+
+    /**
+     * 결제 환불 처리 (단순 상태 변경)
+     */
+    @PostMapping("/payments/{paymentId}/refund")
+    public ResponseEntity<PaymentAdminDto> refundPayment(@PathVariable Long paymentId) {
+        Payment payment = paymentRepository.findById(paymentId)
+                .orElseThrow(() -> new RuntimeException("결제를 찾을 수 없습니다."));
+
+        if (payment.getStatus() != Payment.PaymentStatus.PAID) {
+            return ResponseEntity.badRequest().build();
+        }
+
+        payment.setStatus(Payment.PaymentStatus.REFUNDED);
+        payment.setCancelledAt(LocalDateTime.now());
+        paymentRepository.save(payment);
+
+        return ResponseEntity.ok(PaymentAdminDto.from(payment));
     }
 
     /**

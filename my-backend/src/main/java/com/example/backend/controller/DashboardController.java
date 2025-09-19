@@ -12,6 +12,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
+import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -22,12 +23,14 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.IntStream;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 
 @RestController
 @RequestMapping("/api/admin/dashboard")
 @RequiredArgsConstructor
 @Slf4j
+@CrossOrigin(origins = "http://localhost:5173")
 public class DashboardController {
 
     private final UserRepository userRepository;
@@ -65,7 +68,7 @@ public class DashboardController {
         List<DashboardSummaryDto.MonthlySignups> monthlySignups = getMonthlySignups();
 
         // 최근 30일간 예약 수가 가장 많은 상위 5개 호텔
-        List<DashboardSummaryDto.TopHotel> topHotels = getTopHotels();
+    List<DashboardSummaryDto.TopHotel> topHotels = getTopHotels();
 
         DashboardSummaryDto summary = DashboardSummaryDto.builder()
                 .totalUsers(totalUsers)
@@ -124,27 +127,26 @@ public class DashboardController {
         LocalDateTime endDate = LocalDateTime.now();
         LocalDateTime startDate = endDate.minusMonths(12);
 
-        List<Object[]> userResults = userRepository.getMonthlySignupsByDateRange(startDate, endDate);
-        List<Object[]> businessResults = businessRepository.getMonthlySignupsByDateRange(startDate, endDate);
+        List<java.time.LocalDateTime> userTimes = userRepository.findCreationTimesByDateRange(startDate, endDate);
+        List<java.time.LocalDateTime> businessTimes = businessRepository.findCreationTimesByDateRange(startDate, endDate);
 
-        // 결과를 Map으로 변환
         var userMap = new java.util.HashMap<String, Long>();
-        for (Object[] result : userResults) {
-            String month = (String) result[0];
-            Long count = (Long) result[1];
-            userMap.put(month, count);
+        var businessMap = new java.util.HashMap<String, Long>();
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM");
+
+        for (var ts : userTimes) {
+            if (ts == null) continue;
+            String key = ts.toLocalDate().withDayOfMonth(1).format(formatter);
+            userMap.put(key, userMap.getOrDefault(key, 0L) + 1);
         }
 
-        var businessMap = new java.util.HashMap<String, Long>();
-        for (Object[] result : businessResults) {
-            String month = (String) result[0];
-            Long count = (Long) result[1];
-            businessMap.put(month, count);
+        for (var ts : businessTimes) {
+            if (ts == null) continue;
+            String key = ts.toLocalDate().withDayOfMonth(1).format(formatter);
+            businessMap.put(key, businessMap.getOrDefault(key, 0L) + 1);
         }
 
         List<DashboardSummaryDto.MonthlySignups> monthlySignups = new ArrayList<>();
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM");
-
         // 12개월간 모든 월에 대해 데이터 생성
         for (int i = 11; i >= 0; i--) {
             String month = LocalDate.now().minusMonths(i).format(formatter);
@@ -168,7 +170,8 @@ public class DashboardController {
         LocalDateTime endDate = LocalDateTime.now();
         LocalDateTime startDate = endDate.minusDays(30);
 
-        List<Object[]> results = hotelRepository.getTopHotelsByReservations(startDate, endDate, 5);
+        Pageable topFive = PageRequest.of(0, 5);
+        List<Object[]> results = hotelRepository.getTopHotelsByReservations(startDate, endDate, topFive);
         List<DashboardSummaryDto.TopHotel> topHotels = new ArrayList<>();
 
         for (Object[] result : results) {

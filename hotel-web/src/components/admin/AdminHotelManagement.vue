@@ -2,34 +2,34 @@
   <div class="hotel-management">
     <div class="page-header">
       <h1>호텔 및 숙소 관리</h1>
-      <p>전체 호텔 현황을 관리하고 승인/거부 처리를 할 수 있습니다.</p>
+      <p class="page-description">전체 호텔 현황을 관리하고 승인/거부 처리를 할 수 있습니다.</p>
     </div>
 
     <!-- 통계 카드 -->
     <div class="stats-grid">
       <div class="stat-card">
-        <div class="stat-icon">🏨</div>
+        <div class="stat-icon"></div>
         <div class="stat-content">
           <div class="stat-number">{{ stats.totalHotels }}</div>
           <div class="stat-label">전체 호텔</div>
         </div>
       </div>
       <div class="stat-card pending">
-        <div class="stat-icon">⏳</div>
+        <div class="stat-icon"></div>
         <div class="stat-content">
           <div class="stat-number">{{ stats.pendingHotels }}</div>
           <div class="stat-label">승인 대기</div>
         </div>
       </div>
       <div class="stat-card approved">
-        <div class="stat-icon">✅</div>
+        <div class="stat-icon"></div>
         <div class="stat-content">
           <div class="stat-number">{{ stats.approvedHotels }}</div>
           <div class="stat-label">승인 완료</div>
         </div>
       </div>
       <div class="stat-card revenue">
-        <div class="stat-icon">💰</div>
+        <div class="stat-icon"></div>
         <div class="stat-content">
           <div class="stat-number">{{ formatCurrency(stats.totalRevenue) }}</div>
           <div class="stat-label">총 매출</div>
@@ -99,10 +99,7 @@
             <td>{{ hotel.roomCount }}</td>
             <td>{{ hotel.reservationCount }}</td>
             <td>
-              <div class="rating">
-                <span class="stars">⭐</span>
-                {{ hotel.averageRating.toFixed(1) }}
-              </div>
+              <div class="rating">{{ hotel.averageRating.toFixed(1) }}</div>
             </td>
             <td>{{ formatCurrency(hotel.totalRevenue) }}</td>
             <td>
@@ -233,7 +230,7 @@
                 </div>
                 <div class="detail-item">
                   <label>평균 평점:</label>
-                  <span>{{ selectedHotel.averageRating.toFixed(1) }} ⭐</span>
+                  <span>{{ selectedHotel.averageRating.toFixed(1) }}</span>
                 </div>
                 <div class="detail-item">
                   <label>총 매출:</label>
@@ -371,12 +368,11 @@ export default {
         if (filters.status) params.status = filters.status
         if (filters.city) params.city = filters.city
 
-        const response = await axios.get('/api/admin/hotels', { params })
+  const response = await axios.get('/admin/hotels', { params })
         hotels.value = response.data
         
         updateStats()
       } catch (error) {
-        console.error('호텔 목록 로딩 실패:', error)
         alert('호텔 목록을 불러오는데 실패했습니다.')
       }
     }
@@ -402,18 +398,17 @@ export default {
 
     const viewHotelDetail = async (hotel) => {
       try {
-        const response = await axios.get(`/api/admin/hotels/${hotel.id}`)
+  const response = await axios.get(`/admin/hotels/${hotel.id}`)
         selectedHotel.value = response.data
         showDetailModal.value = true
       } catch (error) {
-        console.error('호텔 상세 정보 로딩 실패:', error)
         alert('호텔 상세 정보를 불러오는데 실패했습니다.')
       }
     }
 
     const updateHotelStatus = async (hotelId, status, reason = '') => {
       try {
-        await axios.put(`/api/admin/hotels/${hotelId}/status`, {
+  await axios.put(`/admin/hotels/${hotelId}/status`, {
           status,
           reason
         })
@@ -421,7 +416,6 @@ export default {
         alert(`호텔 상태가 ${getStatusText(status)}(으)로 변경되었습니다.`)
         loadHotels(hotels.value.number)
       } catch (error) {
-        console.error('호텔 상태 변경 실패:', error)
         alert('호텔 상태 변경에 실패했습니다.')
       }
     }
@@ -481,11 +475,10 @@ export default {
       }
 
       try {
-        await axios.delete(`/api/admin/hotels/${hotelId}`)
+  await axios.delete(`/admin/hotels/${hotelId}`)
         alert('호텔이 삭제되었습니다.')
         loadHotels(hotels.value.number)
       } catch (error) {
-        console.error('호텔 삭제 실패:', error)
         alert('호텔 삭제에 실패했습니다.')
       }
     }
@@ -553,20 +546,7 @@ export default {
   padding: 20px;
 }
 
-.page-header {
-  margin-bottom: 30px;
-}
-
-.page-header h1 {
-  font-size: 28px;
-  color: #333;
-  margin-bottom: 8px;
-}
-
-.page-header p {
-  color: #666;
-  font-size: 16px;
-}
+/* page-header uses global styles */
 
 .stats-grid {
   display: grid;

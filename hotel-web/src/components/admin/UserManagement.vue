@@ -5,63 +5,42 @@
       <p class="page-description">전체 사용자를 조회하고 역할을 관리할 수 있습니다.</p>
     </div>
 
-    <!-- 검색 필터 -->
+    <!-- 검색 필터 (네이티브) -->
     <div class="search-section">
-      <div class="search-form">
+      <form class="search-form" @submit.prevent="searchUsers">
         <div class="search-group">
           <label>이름</label>
-          <input
-            v-model="searchForm.name"
-            type="text"
-            placeholder="사용자 이름 검색"
-            @keyup.enter="searchUsers"
-            class="search-input"
-          />
+          <input class="search-input" v-model="searchForm.name" placeholder="사용자 이름 검색" @keyup.enter="searchUsers" />
         </div>
-        
         <div class="search-group">
           <label>이메일</label>
-          <input
-            v-model="searchForm.email"
-            type="text"
-            placeholder="이메일 검색"
-            @keyup.enter="searchUsers"
-            class="search-input"
-          />
+          <input class="search-input" v-model="searchForm.email" placeholder="이메일 검색" @keyup.enter="searchUsers" />
         </div>
-        
         <div class="search-group">
           <label>역할</label>
-          <select v-model="searchForm.role" class="search-select">
+          <select class="search-select" v-model="searchForm.role">
             <option value="">전체</option>
             <option value="USER">일반 사용자</option>
             <option value="BUSINESS">사업자</option>
             <option value="ADMIN">관리자</option>
           </select>
         </div>
-        
         <div class="search-buttons">
-          <button @click="searchUsers" class="btn btn-primary">검색</button>
-          <button @click="resetSearch" class="btn btn-secondary">초기화</button>
+          <button type="submit" class="btn btn-primary">검색</button>
+          <button type="button" class="btn btn-secondary" @click="resetSearch">초기화</button>
         </div>
-      </div>
+      </form>
     </div>
 
-    <!-- 사용자 목록 테이블 -->
+    <!-- 사용자 목록 (네이티브) -->
     <div class="table-section">
       <div class="table-header">
         <h2>사용자 목록</h2>
-        <span class="total-count">총 {{ totalElements }}명</span>
+        <div class="total-count">총 {{ totalElements }}명</div>
       </div>
 
-      <div v-if="loading" class="loading">
-        <p>데이터를 불러오는 중...</p>
-      </div>
-
-      <div v-else-if="users.length === 0" class="no-data">
-        <p>검색 결과가 없습니다.</p>
-      </div>
-
+      <div v-if="loading" class="loading">불러오는 중…</div>
+      <div v-else-if="!users || users.length === 0" class="no-data">검색 결과가 없습니다.</div>
       <table v-else class="user-table">
         <thead>
           <tr>
@@ -76,33 +55,22 @@
           </tr>
         </thead>
         <tbody>
-          <tr v-for="user in users" :key="user.id" class="user-row">
-            <td>{{ user.id }}</td>
-            <td>{{ user.name }}</td>
-            <td>{{ user.email }}</td>
+          <tr v-for="row in users" :key="row.id" class="user-row">
+            <td>{{ row.id }}</td>
+            <td>{{ row.name }}</td>
+            <td>{{ row.email }}</td>
             <td>
-              <span :class="['role-badge', 'role-' + user.role.toLowerCase()]">
-                {{ getRoleLabel(user.role) }}
-              </span>
+              <span :class="['role-badge', roleBadgeClass(row.role)]">{{ getRoleLabel(row.role) }}</span>
             </td>
             <td>
-              <span :class="['status-badge', 'status-' + user.status.toLowerCase()]">
-                {{ getStatusLabel(user.status) }}
-              </span>
+              <span :class="['status-badge', statusBadgeClass(row.status)]">{{ getStatusLabel(row.status) }}</span>
             </td>
             <td>
-              <span class="provider-badge">
-                {{ getProviderLabel(user.provider) }}
-              </span>
+              <span class="provider-badge">{{ getProviderLabel(row.provider) }}</span>
             </td>
-            <td>{{ formatDate(user.createdAt) }}</td>
+            <td>{{ formatDate(row.createdAt) }}</td>
             <td>
-              <select
-                :value="user.role"
-                @change="updateUserRole(user, $event.target.value)"
-                :disabled="user.id === currentUserId"
-                class="role-select"
-              >
+              <select class="role-select" :disabled="row.id === currentUserId" :value="row.role" @change="e => updateUserRole(row, e.target.value)">
                 <option value="USER">일반 사용자</option>
                 <option value="BUSINESS">사업자</option>
                 <option value="ADMIN">관리자</option>
@@ -111,52 +79,21 @@
           </tr>
         </tbody>
       </table>
-    </div>
 
-    <!-- 페이지네이션 -->
-    <div class="pagination-section" v-if="totalPages > 1">
-      <div class="pagination">
-        <button
-          @click="changePage(0)"
-          :disabled="currentPage === 0"
-          class="page-btn"
-        >
-          ⏮️ 처음
-        </button>
-        
-        <button
-          @click="changePage(currentPage - 1)"
-          :disabled="currentPage === 0"
-          class="page-btn"
-        >
-          ⬅️ 이전
-        </button>
-        
-        <span class="page-info">
-          {{ currentPage + 1 }} / {{ totalPages }} 페이지
-        </span>
-        
-        <button
-          @click="changePage(currentPage + 1)"
-          :disabled="currentPage >= totalPages - 1"
-          class="page-btn"
-        >
-          다음 ➡️
-        </button>
-        
-        <button
-          @click="changePage(totalPages - 1)"
-          :disabled="currentPage >= totalPages - 1"
-          class="page-btn"
-        >
-          마지막 ⏭️
-        </button>
+      <div class="pagination-section" v-if="totalPages > 1">
+        <div class="pagination">
+          <button class="page-btn" :disabled="currentPage === 0" @click="changePage(currentPage - 1)">이전</button>
+          <span class="page-info">{{ currentPage + 1 }} / {{ totalPages }}</span>
+          <button class="page-btn" :disabled="currentPage >= totalPages - 1" @click="changePage(currentPage + 1)">다음</button>
+        </div>
       </div>
     </div>
   </div>
 </template>
 
 <script>
+import api from '../../api/http'
+
 export default {
   name: 'UserManagement',
   data() {
@@ -184,34 +121,24 @@ export default {
     async loadUsers() {
       this.loading = true;
       try {
-        const params = new URLSearchParams();
-        params.append('page', this.currentPage);
-        params.append('size', this.pageSize);
+        const params = {
+          page: this.currentPage,
+          size: this.pageSize
+        };
         
-        if (this.searchForm.name) params.append('name', this.searchForm.name);
-        if (this.searchForm.email) params.append('email', this.searchForm.email);
-        if (this.searchForm.role) params.append('role', this.searchForm.role);
+        if (this.searchForm.name) params.name = this.searchForm.name;
+        if (this.searchForm.email) params.email = this.searchForm.email;
+        if (this.searchForm.role) params.role = this.searchForm.role;
         
-        const response = await fetch(`/api/admin/users?${params}`, {
-          method: 'GET',
-          credentials: 'include',
-          headers: {
-            'Content-Type': 'application/json'
-          }
-        });
+        const response = await api.get('/admin/users', { params });
         
-        if (!response.ok) {
-          throw new Error('사용자 목록 조회 실패');
-        }
-        
-        const data = await response.json();
+        const data = response.data;
         this.users = data.content;
         this.totalPages = data.totalPages;
         this.totalElements = data.totalElements;
         this.currentPage = data.number;
         
       } catch (error) {
-        console.error('사용자 목록 로드 실패:', error);
         alert('사용자 목록을 불러오는데 실패했습니다.');
       } finally {
         this.loading = false;
@@ -222,37 +149,22 @@ export default {
       if (user.role === newRole) return;
       
       const confirmMessage = `${user.name}님의 역할을 "${this.getRoleLabel(newRole)}"로 변경하시겠습니까?`;
-      if (!confirm(confirmMessage)) {
+      const ok = window.confirm(confirmMessage)
+      if (!ok) {
         // 선택된 값을 원래대로 되돌림
         this.$forceUpdate();
         return;
       }
       
       try {
-        const response = await fetch(`/api/admin/users/${user.id}/role`, {
-          method: 'PUT',
-          credentials: 'include',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({ role: newRole })
-        });
-        
-        if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(errorData.error || '역할 변경 실패');
-        }
-        
-        const result = await response.json();
+        const response = await api.put(`/admin/users/${user.id}/role`, { role: newRole });
         
         // 로컬 데이터 업데이트
         user.role = newRole;
-        
         alert(`${user.name}님의 역할이 성공적으로 변경되었습니다.`);
         
       } catch (error) {
-        console.error('역할 변경 실패:', error);
-        alert(error.message);
+        alert(error.response?.data?.error || '역할 변경에 실패했습니다.');
         // 실패 시 원래 값으로 되돌림
         this.$forceUpdate();
       }
@@ -317,16 +229,29 @@ export default {
         hour: '2-digit',
         minute: '2-digit'
       });
+    },
+    roleTagType(role) {
+      const map = { USER: 'info', BUSINESS: 'warning', ADMIN: 'success' }
+      return map[role] || 'info'
+    },
+    statusTagType(status) {
+      const map = { ACTIVE: 'success', INACTIVE: 'info', SUSPENDED: 'danger' }
+      return map[status] || 'info'
+    },
+    roleBadgeClass(role) {
+      const map = { USER: 'role-user', BUSINESS: 'role-business', ADMIN: 'role-admin' }
+      return map[role] || 'role-user'
+    },
+    statusBadgeClass(status) {
+      const map = { ACTIVE: 'status-active', INACTIVE: 'status-inactive', SUSPENDED: 'status-suspended' }
+      return map[status] || 'status-active'
     }
   }
 }
 </script>
 
 <style scoped>
-.user-management {
-  max-width: 1400px;
-  margin: 0 auto;
-}
+
 
 .page-header {
   margin-bottom: 30px;
@@ -470,6 +395,14 @@ export default {
   border-bottom: 1px solid #e9ecef;
 }
 
+/* 줄바꿈 방지: 역할/상태/가입방식/역할변경 열 */
+.user-table td:nth-child(4),
+.user-table td:nth-child(5),
+.user-table td:nth-child(6),
+.user-table td:nth-child(8) {
+  white-space: nowrap;
+}
+
 .user-table th {
   background-color: #f8f9fa;
   font-weight: 600;
@@ -494,6 +427,9 @@ export default {
   border-radius: 12px;
   font-size: 12px;
   font-weight: 500;
+  white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
 }
 
 .role-user { background-color: #e3f2fd; color: #1976d2; }
@@ -515,6 +451,7 @@ export default {
   border-radius: 4px;
   font-size: 12px;
   min-width: 100px;
+  white-space: nowrap;
 }
 
 .role-select:disabled {

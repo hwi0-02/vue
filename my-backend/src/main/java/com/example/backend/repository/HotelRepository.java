@@ -22,11 +22,10 @@ public interface HotelRepository extends JpaRepository<Hotel, Long> {
            "LEFT JOIN Review rv ON rv.hotel = h " +
            "WHERE r.createdAt BETWEEN :from AND :to " +
            "GROUP BY h.id, h.name, h.business.businessName " +
-           "ORDER BY COUNT(r) DESC " +
-           "LIMIT :limit")
+           "ORDER BY COUNT(r) DESC")
     List<Object[]> getTopHotelsByReservations(@Param("from") LocalDateTime from,
                                              @Param("to") LocalDateTime to,
-                                             @Param("limit") int limit);
+                                             org.springframework.data.domain.Pageable pageable);
 
     @Query("SELECT h FROM Hotel h WHERE " +
            "(:name IS NULL OR h.name LIKE %:name%) AND " +

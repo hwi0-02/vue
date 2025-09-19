@@ -1,85 +1,67 @@
 <template>
   <div class="admin-dashboard">
-    <div class="dashboard-header">
-      <h2><i class="fas fa-chart-line"></i> 관리자 대시보드</h2>
-      <div class="refresh-section">
-        <span class="last-updated">마지막 업데이트: {{ lastUpdated }}</span>
-        <button class="btn btn-primary" @click="refreshData">
-          <i class="fas fa-refresh" :class="{ 'fa-spin': loading }"></i>
-          새로고침
-        </button>
-      </div>
+    <div class="page-header">
+      <h1>관리자 대시보드</h1>
+      <p class="page-description">전체 현황을 한눈에 보고 필요한 지표를 설정할 수 있습니다.</p>
+    </div>
+    <div class="page-toolbar">
+      <span class="last-updated">마지막 업데이트: {{ lastUpdated }}</span>
+      <button class="btn" @click="showFilterDrawer = true">설정</button>
+      <button class="btn btn-primary" @click="refreshData">새로고침</button>
     </div>
 
-    <!-- 핵심 지표 요약 카드 -->
-    <div class="summary-cards">
-      <div class="summary-card users">
-        <div class="card-icon">
-          <i class="fas fa-users"></i>
-        </div>
+    <!-- 핵심 지표 요약 카드 (다른 페이지와 동일한 카드 디자인) -->
+    <div class="summary-cards mb-16">
+      <div class="card users">
+        <div class="card-icon"></div>
         <div class="card-content">
-          <h3>{{ formatNumber(dashboardData.totalUsers) }}</h3>
-          <p>총 사용자</p>
+          <h3>총 사용자</h3>
+          <p class="card-number">{{ formatNumber(dashboardData.totalUsers) }}</p>
         </div>
       </div>
-      
-      <div class="summary-card businesses">
-        <div class="card-icon">
-          <i class="fas fa-building"></i>
-        </div>
+      <div class="card businesses">
+        <div class="card-icon"></div>
         <div class="card-content">
-          <h3>{{ formatNumber(dashboardData.totalBusinesses) }}</h3>
-          <p>총 사업자</p>
+          <h3>총 사업자</h3>
+          <p class="card-number">{{ formatNumber(dashboardData.totalBusinesses) }}</p>
         </div>
       </div>
-      
-      <div class="summary-card reservations">
-        <div class="card-icon">
-          <i class="fas fa-calendar-check"></i>
-        </div>
+      <div class="card reservations">
+        <div class="card-icon"></div>
         <div class="card-content">
-          <h3>{{ formatNumber(dashboardData.totalReservations) }}</h3>
-          <p>총 예약</p>
+          <h3>총 예약</h3>
+          <p class="card-number">{{ formatNumber(dashboardData.totalReservations) }}</p>
         </div>
       </div>
-      
-      <div class="summary-card revenue">
-        <div class="card-icon">
-          <i class="fas fa-won-sign"></i>
-        </div>
+      <div class="card revenue">
+        <div class="card-icon"></div>
         <div class="card-content">
-          <h3>{{ formatCurrency(dashboardData.totalRevenue) }}</h3>
-          <p>총 매출</p>
+          <h3>총 매출</h3>
+          <p class="card-number">{{ formatCurrency(dashboardData.totalRevenue) }}</p>
         </div>
       </div>
-      
-      <div class="summary-card reviews">
-        <div class="card-icon">
-          <i class="fas fa-star"></i>
-        </div>
+      <div class="card reviews">
+        <div class="card-icon"></div>
         <div class="card-content">
-          <h3>{{ formatNumber(dashboardData.totalReviews) }}</h3>
-          <p>총 리뷰</p>
+          <h3>총 리뷰</h3>
+          <p class="card-number">{{ formatNumber(dashboardData.totalReviews) }}</p>
         </div>
       </div>
-      
-      <div class="summary-card coupons">
-        <div class="card-icon">
-          <i class="fas fa-ticket-alt"></i>
-        </div>
+      <div class="card coupons">
+        <div class="card-icon"></div>
         <div class="card-content">
-          <h3>{{ formatNumber(dashboardData.totalCoupons) }}</h3>
-          <p>총 쿠폰</p>
+          <h3>총 쿠폰</h3>
+          <p class="card-number">{{ formatNumber(dashboardData.totalCoupons) }}</p>
         </div>
       </div>
     </div>
 
-    <!-- 차트 섹션 -->
+  <!-- 차트 섹션 -->
     <div class="charts-section">
       <!-- 매출 추이 차트 -->
-      <div class="chart-container">
+      <div class="chart-container" v-if="chartOptions.showRevenue">
         <div class="chart-header">
-          <h3><i class="fas fa-chart-line"></i> 최근 30일 매출 추이</h3>
+          <h3>최근 30일 매출 추이</h3>
         </div>
         <div class="chart-content">
           <Line
@@ -89,16 +71,15 @@
             :height="100"
           />
           <div v-else class="chart-loading">
-            <i class="fas fa-spinner fa-spin"></i>
             차트 로딩 중...
           </div>
         </div>
       </div>
 
       <!-- 월별 가입자 차트 -->
-      <div class="chart-container">
+      <div class="chart-container" v-if="chartOptions.showSignups">
         <div class="chart-header">
-          <h3><i class="fas fa-chart-bar"></i> 최근 12개월 신규 가입자</h3>
+          <h3>최근 12개월 신규 가입자</h3>
         </div>
         <div class="chart-content">
           <Bar
@@ -108,17 +89,16 @@
             :height="100"
           />
           <div v-else class="chart-loading">
-            <i class="fas fa-spinner fa-spin"></i>
             차트 로딩 중...
           </div>
         </div>
       </div>
     </div>
 
-    <!-- 인기 호텔 Top 5 -->
-    <div class="top-hotels-section">
+  <!-- 인기 호텔 Top 5 -->
+    <div class="top-hotels-section" v-if="chartOptions.showTopHotels">
       <div class="section-header">
-        <h3><i class="fas fa-trophy"></i> 인기 호텔 Top 5 (최근 30일)</h3>
+  <h3>인기 호텔 Top 5 (최근 30일)</h3>
       </div>
       <div class="top-hotels-list">
         <div 
@@ -129,9 +109,7 @@
         >
           <div class="hotel-rank">
             <span class="rank-number">{{ index + 1 }}</span>
-            <i v-if="index === 0" class="fas fa-crown gold"></i>
-            <i v-else-if="index === 1" class="fas fa-medal silver"></i>
-            <i v-else-if="index === 2" class="fas fa-medal bronze"></i>
+            
           </div>
           <div class="hotel-info">
             <h4>{{ hotel.hotelName }}</h4>
@@ -148,24 +126,33 @@
             </div>
             <div class="stat">
               <span class="label">평점</span>
-              <span class="value">
-                <i class="fas fa-star"></i>
-                {{ hotel.averageRating.toFixed(1) }}
-              </span>
+              <span class="value">{{ hotel.averageRating.toFixed(1) }}</span>
             </div>
           </div>
         </div>
         
         <div v-if="dashboardData.topHotels.length === 0" class="no-data">
-          <i class="fas fa-info-circle"></i>
-          최근 30일간 예약 데이터가 없습니다.
+      최근 30일간 예약 데이터가 없습니다.
         </div>
       </div>
     </div>
 
-    <!-- 로딩 오버레이 -->
-    <div v-if="loading" class="loading-overlay">
-      <div class="spinner"></div>
+    <!-- 설정 드로어 -->
+    <div class="drawer-overlay" v-if="showFilterDrawer" @click.self="showFilterDrawer = false">
+      <div class="drawer" role="dialog" aria-modal="true">
+        <div class="drawer-header">
+          <strong>대시보드 설정</strong>
+          <button class="btn" @click="showFilterDrawer = false">닫기</button>
+        </div>
+        <div class="drawer-body">
+          <label><input type="checkbox" v-model="chartOptions.showRevenue"/> 매출 추이</label>
+          <label><input type="checkbox" v-model="chartOptions.showSignups"/> 월별 가입자</label>
+          <label><input type="checkbox" v-model="chartOptions.showTopHotels"/> 인기 호텔</label>
+        </div>
+        <div class="drawer-footer">
+          <button class="btn btn-primary" @click="applyDashboardOptions">적용</button>
+        </div>
+      </div>
     </div>
   </div>
 </template>
@@ -208,7 +195,7 @@ export default {
   },
   setup() {
     // 반응형 데이터
-    const loading = ref(false)
+  const loading = ref(false)
     const lastUpdated = ref('')
     const dashboardData = reactive({
       totalUsers: 0,
@@ -224,6 +211,33 @@ export default {
     
     const revenueChartData = ref(null)
     const signupChartData = ref(null)
+
+    // Element Plus - 대시보드 설정 드로어 상태 및 옵션
+    const showFilterDrawer = ref(false)
+    const chartOptions = reactive({
+      showRevenue: true,
+      showSignups: true,
+      showTopHotels: true
+    })
+
+    const loadSavedOptions = () => {
+      try {
+        const saved = localStorage.getItem('dashboardChartOptions')
+        if (saved) {
+          const parsed = JSON.parse(saved)
+          chartOptions.showRevenue = !!parsed.showRevenue
+          chartOptions.showSignups = !!parsed.showSignups
+          chartOptions.showTopHotels = !!parsed.showTopHotels
+        }
+      } catch (e) {
+      }
+    }
+    const saveOptions = () => {
+      try {
+        localStorage.setItem('dashboardChartOptions', JSON.stringify(chartOptions))
+      } catch (e) {
+      }
+    }
 
     // 차트 옵션
     const revenueChartOptions = {
@@ -280,7 +294,14 @@ export default {
         },
         tooltip: {
           mode: 'index',
-          intersect: false
+          intersect: false,
+          callbacks: {
+            label: function(context) {
+              const label = context.dataset.label || ''
+              const value = Math.round(context.parsed.y || 0)
+              return `${label}: ${formatNumber(value)}명`
+            }
+          }
         }
       },
       scales: {
@@ -297,7 +318,13 @@ export default {
             display: true,
             text: '가입자 수'
           },
-          beginAtZero: true
+          beginAtZero: true,
+          ticks: {
+            precision: 0,
+            callback: function(value) {
+              return formatNumber(Math.round(value))
+            }
+          }
         }
       }
     }
@@ -306,15 +333,16 @@ export default {
     const loadDashboardData = async () => {
       loading.value = true
       try {
-        const response = await api.get('/api/admin/dashboard/summary')
-        const data = response.data
+  const response = await api.get('/admin/dashboard/summary')
+  const data = response.data || {}
 
         // 기본 통계 데이터 설정
         Object.assign(dashboardData, data)
 
         // 매출 차트 데이터 설정
+        const daily = Array.isArray(data.dailyRevenues) ? data.dailyRevenues : []
         revenueChartData.value = {
-          labels: data.dailyRevenues.map(item => 
+          labels: daily.map(item => 
             new Date(item.date).toLocaleDateString('ko-KR', { 
               month: 'short', 
               day: 'numeric' 
@@ -323,7 +351,7 @@ export default {
           datasets: [
             {
               label: '일별 매출',
-              data: data.dailyRevenues.map(item => item.revenue),
+              data: daily.map(item => Number(item.revenue ?? 0)),
               borderColor: 'rgb(75, 192, 192)',
               backgroundColor: 'rgba(75, 192, 192, 0.1)',
               fill: true,
@@ -333,19 +361,20 @@ export default {
         }
 
         // 가입자 차트 데이터 설정
+        const monthly = Array.isArray(data.monthlySignups) ? data.monthlySignups : []
         signupChartData.value = {
-          labels: data.monthlySignups.map(item => item.month),
+          labels: monthly.map(item => item.month),
           datasets: [
             {
               label: '사용자',
-              data: data.monthlySignups.map(item => item.userCount),
+              data: monthly.map(item => Math.round(Number(item.userCount ?? 0))),
               backgroundColor: 'rgba(54, 162, 235, 0.8)',
               borderColor: 'rgba(54, 162, 235, 1)',
               borderWidth: 1
             },
             {
               label: '사업자',
-              data: data.monthlySignups.map(item => item.businessCount),
+              data: monthly.map(item => Math.round(Number(item.businessCount ?? 0))),
               backgroundColor: 'rgba(255, 99, 132, 0.8)',
               borderColor: 'rgba(255, 99, 132, 1)',
               borderWidth: 1
@@ -356,7 +385,6 @@ export default {
         lastUpdated.value = new Date().toLocaleString('ko-KR')
 
       } catch (error) {
-        console.error('대시보드 데이터 로드 실패:', error)
         alert('대시보드 데이터를 불러오는데 실패했습니다.')
       } finally {
         loading.value = false
@@ -368,6 +396,12 @@ export default {
       loadDashboardData()
     }
 
+    const applyDashboardOptions = () => {
+      saveOptions()
+      showFilterDrawer.value = false
+    }
+
+
     // 유틸리티 함수들
     const formatNumber = (num) => {
       if (!num) return '0'
@@ -375,12 +409,14 @@ export default {
     }
 
     const formatCurrency = (amount) => {
-      if (!amount) return '0원'
-      return amount.toLocaleString('ko-KR') + '원'
+      const num = typeof amount === 'number' ? amount : Number(amount || 0)
+      if (!num) return '0원'
+      return num.toLocaleString('ko-KR') + '원'
     }
 
     // 컴포넌트 마운트 시 데이터 로드
     onMounted(() => {
+      loadSavedOptions()
       loadDashboardData()
     })
 
@@ -399,7 +435,10 @@ export default {
       // 함수들
       refreshData,
       formatNumber,
-      formatCurrency
+      formatCurrency,
+      showFilterDrawer,
+      chartOptions,
+      applyDashboardOptions
     }
   }
 }
@@ -408,112 +447,66 @@ export default {
 <style scoped>
 .admin-dashboard {
   padding: 20px;
-  max-width: 1400px;
-  margin: 0 auto;
 }
 
-.dashboard-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 30px;
-  padding-bottom: 20px;
-  border-bottom: 2px solid #e9ecef;
-}
-
-.dashboard-header h2 {
-  color: #2c3e50;
-  font-size: 28px;
-  font-weight: 600;
-  margin: 0;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.refresh-section {
-  display: flex;
-  align-items: center;
-  gap: 15px;
-}
+.page-toolbar { display: flex; align-items: center; justify-content: flex-end; gap: 10px; margin-bottom: 16px; }
 
 .last-updated {
   color: #6c757d;
   font-size: 14px;
 }
 
-/* 요약 카드 스타일 */
+/* 요약 카드 스타일 (HotelManagement와 일치) */
 .summary-cards {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  grid-template-columns: repeat(2, 1fr);
   gap: 20px;
-  margin-bottom: 40px;
+  margin-bottom: 30px;
 }
 
-.summary-card {
+.card {
   background: white;
   border-radius: 12px;
-  padding: 25px;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+  padding: 24px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
   display: flex;
   align-items: center;
-  gap: 20px;
-  transition: all 0.3s ease;
-  position: relative;
-  overflow: hidden;
+  gap: 16px;
+  transition: transform 0.2s ease;
 }
 
-.summary-card::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 4px;
-}
+.card:hover { transform: translateY(-2px); }
 
-.summary-card:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
-}
-
-.summary-card.users::before { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
-.summary-card.businesses::before { background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); }
-.summary-card.reservations::before { background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); }
-.summary-card.revenue::before { background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%); }
-.summary-card.reviews::before { background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%); }
-.summary-card.coupons::before { background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%); }
+.card.users { border-left: 4px solid #667eea; }
+.card.businesses { border-left: 4px solid #f093fb; }
+.card.reservations { border-left: 4px solid #4facfe; }
+.card.revenue { border-left: 4px solid #43e97b; }
+.card.reviews { border-left: 4px solid #ffecd2; }
+.card.coupons { border-left: 4px solid #a8edea; }
 
 .card-icon {
+  font-size: 32px;
   width: 60px;
   height: 60px;
-  border-radius: 12px;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: white;
-  font-size: 24px;
+  background-color: #f8f9fa;
+  border-radius: 50%;
 }
-
-.summary-card.users .card-icon { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
-.summary-card.businesses .card-icon { background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); }
-.summary-card.reservations .card-icon { background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); }
-.summary-card.revenue .card-icon { background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%); }
-.summary-card.reviews .card-icon { background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%); }
-.summary-card.coupons .card-icon { background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%); }
 
 .card-content h3 {
-  font-size: 32px;
-  font-weight: 700;
-  margin: 0 0 5px 0;
-  color: #2c3e50;
+  margin: 0 0 8px 0;
+  font-size: 14px;
+  color: #7f8c8d;
+  font-weight: 500;
 }
 
-.card-content p {
+.card-number {
   margin: 0;
-  color: #7f8c8d;
-  font-size: 16px;
-  font-weight: 500;
+  font-size: 28px;
+  font-weight: 700;
+  color: #2c3e50;
 }
 
 /* 차트 섹션 */
@@ -564,6 +557,9 @@ export default {
 .chart-loading i {
   margin-right: 10px;
 }
+
+.mb-16 { margin-bottom: 16px; }
+.kpi { font-size: 22px; font-weight: 700; margin-top: 6px; }
 
 /* 인기 호텔 섹션 */
 .top-hotels-section {
@@ -639,9 +635,7 @@ export default {
   text-align: center;
 }
 
-.fa-crown.gold { color: #ffd700; }
-.fa-medal.silver { color: #c0c0c0; }
-.fa-medal.bronze { color: #cd7f32; }
+/* icon styles removed */
 
 .hotel-info {
   flex: 1;
@@ -736,6 +730,49 @@ export default {
   transform: translateY(-1px);
   box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
 }
+
+/* 설정 드로어 */
+.drawer-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.35);
+  display: flex;
+  justify-content: flex-end;
+  z-index: 1000;
+}
+
+.drawer {
+  width: min(360px, 90vw);
+  background: #fff;
+  height: 100%;
+  box-shadow: -4px 0 12px rgba(0,0,0,0.1);
+  display: flex;
+  flex-direction: column;
+}
+
+.drawer-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  border-bottom: 1px solid #e9ecef;
+}
+
+.drawer-body {
+  padding: 16px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.drawer-footer {
+  margin-top: auto;
+  padding: 12px 20px;
+  border-top: 1px solid #e9ecef;
+  display: flex;
+  justify-content: flex-end;
+}
+
 
 /* 로딩 오버레이 */
 .loading-overlay {

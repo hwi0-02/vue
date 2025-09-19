@@ -7,8 +7,6 @@ import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
-import org.hibernate.annotations.UpdateTimestamp;
-import org.hibernate.annotations.UpdateTimestamp;
 
 @Entity
 @Table(name = "users")
@@ -29,7 +27,7 @@ public class User {
     @Column(nullable = false, unique = true, length = 255)
     private String email;
 
-    @Column(nullable = false, length = 255)
+    @Column(length = 255)
     private String password;
 
     @Column(length = 20)
@@ -57,11 +55,11 @@ public class User {
     private Role role;
 
     @CreationTimestamp
-    @Column(name = "created_on", nullable = false, updatable = false)
+    @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
     @UpdateTimestamp
-    @Column(name = "updated_on")
+    @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
     // 연관관계
@@ -111,7 +109,20 @@ public class User {
         return providerId;
     }
     
-    public LocalDateTime getCreatedOn() {
+    public LocalDateTime getCreatedAt() {
         return createdAt;
+    }
+
+    @PrePersist
+    protected void prePersist() {
+        if (this.provider == null) {
+            this.provider = Provider.LOCAL;
+        }
+        if (this.role == null) {
+            this.role = Role.USER;
+        }
+        if (this.status == null) {
+            this.status = Status.ACTIVE;
+        }
     }
 }

@@ -81,18 +81,44 @@ const router = createRouter({
 
 // 관리자 권한 확인 함수
 function checkAdminRole() {
-  // TODO: 실제 사용자 정보에서 역할 확인
-  // 현재는 임시로 localStorage 사용
+  // localStorage에서 userRole 확인
   const userRole = localStorage.getItem('userRole');
+  console.log('저장된 userRole:', userRole);
+  
+  // user 객체에서도 확인
+  const userStr = localStorage.getItem('user');
+  if (userStr) {
+    try {
+      const user = JSON.parse(userStr);
+      console.log('사용자 정보:', user);
+      console.log('사용자 역할:', user.role);
+      
+      // userRole이 없다면 user 객체에서 설정
+      if (!userRole && user.role) {
+        localStorage.setItem('userRole', user.role);
+        return user.role === 'ADMIN';
+      }
+    } catch (e) {
+      console.error('사용자 정보 파싱 오류:', e);
+    }
+  }
+  
   return userRole === 'ADMIN';
 }
 
 // 라우터 가드
 router.beforeEach((to, from, next) => {
+  console.log('라우터 가드 실행:', to.path);
   if (to.meta.requiresAdmin) {
-    if (checkAdminRole()) {
+    console.log('관리자 권한이 필요한 페이지입니다.');
+    const isAdmin = checkAdminRole();
+    console.log('관리자 권한 확인 결과:', isAdmin);
+    
+    if (isAdmin) {
+      console.log('관리자 권한 확인됨. 페이지 접근 허용.');
       next();
     } else {
+      console.log('관리자 권한 없음. 메인 페이지로 리다이렉트.');
       alert('관리자 권한이 필요합니다.');
       next('/');
     }

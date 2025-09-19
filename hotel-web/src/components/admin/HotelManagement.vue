@@ -8,7 +8,7 @@
     <!-- 상태별 요약 카드 -->
     <div class="summary-cards">
       <div class="card pending">
-        <div class="card-icon">⏳</div>
+        <div class="card-icon"></div>
         <div class="card-content">
           <h3>승인 대기</h3>
           <p class="card-number">{{ pendingCount }}</p>
@@ -16,7 +16,7 @@
       </div>
       
       <div class="card approved">
-        <div class="card-icon">✅</div>
+        <div class="card-icon"></div>
         <div class="card-content">
           <h3>승인 완료</h3>
           <p class="card-number">{{ approvedCount }}</p>
@@ -24,7 +24,7 @@
       </div>
       
       <div class="card rejected">
-        <div class="card-icon">❌</div>
+        <div class="card-icon"></div>
         <div class="card-content">
           <h3>반려</h3>
           <p class="card-number">{{ rejectedCount }}</p>
@@ -32,7 +32,7 @@
       </div>
       
       <div class="card suspended">
-        <div class="card-icon">🚫</div>
+        <div class="card-icon"></div>
         <div class="card-content">
           <h3>정지</h3>
           <p class="card-number">{{ suspendedCount }}</p>
@@ -113,44 +113,34 @@
                   @click="updateStatus(business, 'APPROVED')"
                   class="btn btn-approve"
                   title="승인"
-                >
-                  ✅ 승인
-                </button>
+                >승인</button>
                 
                 <button
                   v-if="business.status === 'PENDING'"
                   @click="updateStatus(business, 'REJECTED')"
                   class="btn btn-reject"
                   title="반려"
-                >
-                  ❌ 반려
-                </button>
+                >반려</button>
                 
                 <button
                   v-if="business.status === 'APPROVED'"
                   @click="updateStatus(business, 'SUSPENDED')"
                   class="btn btn-suspend"
                   title="정지"
-                >
-                  🚫 정지
-                </button>
+                >정지</button>
                 
                 <button
                   v-if="business.status === 'SUSPENDED'"
                   @click="updateStatus(business, 'APPROVED')"
                   class="btn btn-activate"
                   title="활성화"
-                >
-                  ✅ 활성화
-                </button>
+                >활성화</button>
                 
                 <button
                   @click="viewDetails(business)"
                   class="btn btn-info"
                   title="상세보기"
-                >
-                  📄 상세
-                </button>
+                >상세</button>
               </div>
             </td>
           </tr>
@@ -264,6 +254,7 @@
 </template>
 
 <script>
+import http from '@/api/http'
 export default {
   name: 'HotelManagement',
   data() {
@@ -292,46 +283,58 @@ export default {
     async loadBusinesses() {
       this.loading = true;
       try {
-        const params = new URLSearchParams();
-        params.append('page', this.currentPage);
-        params.append('size', this.pageSize);
-        
-        if (this.selectedStatus) {
-          params.append('status', this.selectedStatus);
+        const params = {
+          page: this.currentPage,
+          size: this.pageSize
         }
-        
-        const response = await fetch(`/api/admin/businesses?${params}`, {
-          method: 'GET',
-          credentials: 'include',
-          headers: {
-            'Content-Type': 'application/json'
-          }
-        });
-        
-        if (!response.ok) {
-          throw new Error('사업자 목록 조회 실패');
-        }
-        
-        const data = await response.json();
-        this.businesses = data.content;
-        this.totalPages = data.totalPages;
-        this.totalElements = data.totalElements;
-        this.currentPage = data.number;
-        
+        if (this.selectedStatus) params.status = this.selectedStatus
+
+        const { data } = await http.get('/admin/businesses', { params })
+
+        this.businesses = data.content || []
+        this.totalPages = data.totalPages || 0
+        this.totalElements = data.totalElements || 0
+        this.currentPage = data.number || 0
       } catch (error) {
-        console.error('사업자 목록 로드 실패:', error);
-        alert('사업자 목록을 불러오는데 실패했습니다.');
+        console.error('사업자 목록 로드 실패:', error)
+        const msg = error?.response?.data?.error || error?.message || '사업자 목록을 불러오는데 실패했습니다.'
+        alert(msg)
       } finally {
         this.loading = false;
       }
     },
     
     async loadStatusCounts() {
-      // TODO: 상태별 카운트 API 구현 후 실제 데이터로 교체
-      this.pendingCount = 8;
-      this.approvedCount = 45;
-      this.rejectedCount = 3;
-      this.suspendedCount = 2;
+      try {
+        const statuses = ['PENDING', 'APPROVED', 'REJECTED', 'SUSPENDED']
+        const requests = statuses.map(status =>
+          http.get('/admin/businesses', { params: { status, page: 0, size: 1 } })
+        )
+        const results = await Promise.allSettled(requests)
+
+        const totals = {
+          PENDING: 0,
+          APPROVED: 0,
+          REJECTED: 0,
+          SUSPENDED: 0
+        }
+
+        results.forEach((res, idx) => {
+          const key = statuses[idx]
+          if (res.status === 'fulfilled') {
+            const data = res.value?.data || {}
+            totals[key] = data.totalElements ?? 0
+          } else {
+            // 상태 카운트 조회 실패는 무시하고 0으로 처리
+          }
+        })
+
+        this.pendingCount = totals.PENDING
+        this.approvedCount = totals.APPROVED
+        this.rejectedCount = totals.REJECTED
+        this.suspendedCount = totals.SUSPENDED
+      } catch (e) {
+      }
     },
     
     async updateStatus(business, newStatus) {
@@ -347,31 +350,18 @@ export default {
       }
       
       try {
-        const response = await fetch(`/api/admin/businesses/${business.id}/status`, {
-          method: 'PUT',
-          credentials: 'include',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({ status: newStatus })
-        });
-        
-        if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(errorData.error || '상태 변경 실패');
-        }
-        
+        await http.put(`/admin/businesses/${business.id}/status`, { status: newStatus })
+
         // 로컬 데이터 업데이트
-        business.status = newStatus;
-        
-        alert(`${business.businessName}가 성공적으로 ${statusMessages[newStatus]} 처리되었습니다.`);
-        
+        business.status = newStatus
+
+        alert(`${business.businessName}가 성공적으로 ${statusMessages[newStatus]} 처리되었습니다.`)
+
         // 카운트 다시 로드
-        this.loadStatusCounts();
-        
+        this.loadStatusCounts()
       } catch (error) {
-        console.error('상태 변경 실패:', error);
-        alert(error.message);
+        const msg = error?.response?.data?.error || error?.message || '상태 변경에 실패했습니다.'
+        alert(msg)
       }
     },
     
@@ -425,34 +415,15 @@ export default {
 </script>
 
 <style scoped>
-.business-management {
-  max-width: 1400px;
-  margin: 0 auto;
-}
 
-.page-header {
-  margin-bottom: 30px;
-}
 
-.page-header h1 {
-  margin: 0 0 10px 0;
-  font-size: 28px;
-  font-weight: 700;
-  color: #2c3e50;
-}
-
-.page-description {
-  margin: 0;
-  color: #7f8c8d;
-  font-size: 16px;
-}
 
 /* 요약 카드 */
 .summary-cards {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
   gap: 20px;
   margin-bottom: 30px;
+  grid-template-columns: repeat(2, 1fr);
 }
 
 .card {
@@ -464,6 +435,7 @@ export default {
   align-items: center;
   gap: 16px;
   transition: transform 0.2s ease;
+  height: 100%;
 }
 
 .card:hover {
@@ -788,6 +760,9 @@ export default {
 
 /* 반응형 */
 @media (max-width: 768px) {
+  .summary-cards {
+    grid-template-columns: 1fr;
+  }
   .filter-form {
     flex-direction: column;
     align-items: stretch;
@@ -810,4 +785,6 @@ export default {
     grid-template-columns: 1fr;
   }
 }
+
+/* 데스크톱/태블릿은 기본 2열, 모바일만 1열 */
 </style>
