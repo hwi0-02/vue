@@ -356,7 +356,9 @@ export default {
     const loading = ref(false)
     const showCreateModal = ref(false)
     const showEditModal = ref(false)
-    const editingCoupon = ref(null)
+  const editingCoupon = ref(null)
+  const justCreatedId = ref(null)
+  const justCreatedCoupon = ref(null)
     
     // 필터 상태
     const filters = reactive({
@@ -401,6 +403,25 @@ export default {
       }, 500)
     }
 
+    // 기본 정렬 (신규 항목을 상단에)
+    const defaultSort = 'id,desc'
+
+    // UI-API 매핑 유틸
+    const mapUiToApiDiscountType = (val) => {
+      if (val === 'PERCENT') return 'PERCENTAGE'
+      if (val === 'FIXED') return 'FIXED_AMOUNT'
+      return val || null
+    }
+    const mapApiToUiDiscountType = (val) => {
+      if (val === 'PERCENTAGE') return 'PERCENT'
+      if (val === 'FIXED_AMOUNT') return 'FIXED'
+      return val || ''
+    }
+    const normalizeDateTimeSeconds = (val) => {
+      if (!val) return val
+      return val.length === 16 ? `${val}:00` : val
+    }
+
     // 쿠폰 목록 로드
     const loadCoupons = async () => {
       loading.value = true
@@ -408,22 +429,107 @@ export default {
         const params = {
           page: pagination.number,
           size: pagination.size,
+          sort: defaultSort,
+          _ts: Date.now(),
           ...Object.fromEntries(
             Object.entries(filters).filter(([_, value]) => value !== '')
           )
         }
 
-  const response = await api.get('/admin/coupons', { params })
-        
-        coupons.value = response.data.content
-        Object.assign(pagination, {
-          number: response.data.number,
-          size: response.data.size,
-          totalElements: response.data.totalElements,
-          totalPages: response.data.totalPages,
-          first: response.data.first,
-          last: response.data.last
-        })
+        if (params.discountType) {
+          params.discountType = mapUiToApiDiscountType(params.discountType)
+        }
+
+        const response = await api.get('/admin/coupons', { params })
+
+        const data = response.data
+        if (Array.isArray(data)) {
+          coupons.value = data
+          Object.assign(pagination, {
+            number: 0,
+            size: data.length,
+            totalElements: data.length,
+            totalPages: 1,
+            first: true,
+            last: true
+          })
+        } else if (data && Array.isArray(data.content)) {
+          coupons.value = data.content
+          Object.assign(pagination, {
+            number: data.number,
+            size: data.size,
+            totalElements: data.totalElements,
+            totalPages: data.totalPages,
+            first: data.first,
+            last: data.last
+          })
+        } else if (data && Array.isArray(data.items)) {
+          coupons.value = data.items
+          Object.assign(pagination, {
+            number: data.page ?? 0,
+            size: data.size ?? data.items.length,
+            totalElements: data.total ?? data.items.length,
+            totalPages: data.totalPages ?? 1,
+            first: (data.page ?? 0) === 0,
+            last: (data.page ?? 0) >= ((data.totalPages ?? 1) - 1)
+          })
+        } else {
+          coupons.value = []
+          Object.assign(pagination, {
+            number: 0,
+            size: 0,
+            totalElements: 0,
+            totalPages: 0,
+            first: true,
+            last: true
+          })
+        }
+
+        // Optimistic: ensure just-created coupon is visible
+        if (justCreatedId.value && justCreatedCoupon.value) {
+          const exists = coupons.value.some(c => c.id === justCreatedId.value)
+          if (!exists) {
+            coupons.value.unshift(justCreatedCoupon.value)
+          }
+          justCreatedId.value = null
+          justCreatedCoupon.value = null
+        }
+
+        // Backend fallback: if no filter and empty result, retry with status=ACTIVE
+        if (!filters.status && coupons.value.length === 0) {
+          try {
+            const retryParams = {
+              page: 0,
+              size: pagination.size,
+              sort: defaultSort,
+              status: 'ACTIVE',
+              _ts: Date.now(),
+              ...Object.fromEntries(
+                Object.entries(filters)
+                  .filter(([k, v]) => k !== 'status' && v !== '')
+              )
+            }
+            const retryResp = await api.get('/admin/coupons', { params: retryParams })
+            const rdata = retryResp.data
+            const list = Array.isArray(rdata)
+              ? rdata
+              : (Array.isArray(rdata?.content) ? rdata.content : (Array.isArray(rdata?.items) ? rdata.items : []))
+            if (list.length > 0) {
+              coupons.value = list
+              filters.status = 'ACTIVE'
+              Object.assign(pagination, {
+                number: (Array.isArray(rdata) ? 0 : (rdata?.number ?? 0)),
+                size: (Array.isArray(rdata) ? list.length : (rdata?.size ?? list.length)),
+                totalElements: (Array.isArray(rdata) ? list.length : (rdata?.totalElements ?? list.length)),
+                totalPages: (Array.isArray(rdata) ? 1 : (rdata?.totalPages ?? 1)),
+                first: true,
+                last: (Array.isArray(rdata) ? true : (rdata?.last ?? true))
+              })
+            }
+          } catch (e) {
+            // ignore fallback failure
+          }
+        }
 
       } catch (error) {
         console.error('쿠폰 목록 로드 실패:', error)
@@ -436,7 +542,7 @@ export default {
     // 쿠폰 통계 로드
     const loadStats = async () => {
       try {
-  const response = await api.get('/admin/coupons/stats')
+        const response = await api.get('/admin/coupons/stats', { params: { _ts: Date.now() } })
         stats.value = response.data
       } catch (error) {
         console.error('쿠폰 통계 로드 실패:', error)
@@ -447,6 +553,9 @@ export default {
     const createCoupon = async () => {
       try {
         const formData = { ...couponForm }
+        formData.discountType = mapUiToApiDiscountType(formData.discountType)
+        formData.validFrom = normalizeDateTimeSeconds(formData.validFrom)
+        formData.validUntil = normalizeDateTimeSeconds(formData.validUntil)
         
         // null 값들 제거
         Object.keys(formData).forEach(key => {
@@ -455,12 +564,49 @@ export default {
           }
         })
 
-  await api.post('/admin/coupons', formData)
-        
+        const resp = await api.post('/admin/coupons', formData)
+
         alert('쿠폰이 성공적으로 생성되었습니다.')
+        // 신규 쿠폰이 바로 보이도록 코드/상태 필터 적용
+        const createdStatus = formData.status || 'ACTIVE'
+        filters.code = formData.code || ''
+        filters.status = createdStatus
+        // 타입 필터는 충돌 시만 초기화
+        if (filters.discountType && filters.discountType !== (mapApiToUiDiscountType(formData.discountType) || 'PERCENT')) {
+          filters.discountType = ''
+        }
+
         closeModals()
-        loadCoupons()
-        loadStats()
+        pagination.number = 0
+        const createdCode = formData.code
+        if (resp && resp.data && resp.data.id) {
+          justCreatedId.value = resp.data.id
+          justCreatedCoupon.value = resp.data
+          await loadCoupons()
+        } else {
+          // 생성 응답에 id가 없으면 코드로 조회하여 목록에 반영 시도
+          try {
+            const lookup = await api.get('/admin/coupons', { params: { code: createdCode, page: 0, size: 20, sort: defaultSort, _ts: Date.now() } })
+            const data = lookup.data
+            const list = Array.isArray(data) ? data : (Array.isArray(data?.content) ? data.content : (Array.isArray(data?.items) ? data.items : []))
+            if (list.length > 0) {
+              const found = list[0]
+              const exists = coupons.value.some(c => c.id === found.id)
+              if (!exists) coupons.value.unshift(found)
+            } else {
+              // 약간의 지연 후 재시도 (최대 2회)
+              for (let i = 0; i < 2; i++) {
+                await new Promise(r => setTimeout(r, 300))
+                await loadCoupons()
+                if (coupons.value.some(c => c.code === createdCode)) break
+              }
+            }
+          } catch (e) {
+            console.warn('생성 후 코드 조회 실패:', e)
+            await loadCoupons()
+          }
+        }
+        await loadStats()
       } catch (error) {
         console.error('쿠폰 생성 실패:', error)
         alert(error.response?.data?.message || '쿠폰 생성에 실패했습니다.')
@@ -471,6 +617,11 @@ export default {
     const updateCoupon = async () => {
       try {
         const formData = { ...couponForm }
+        if (formData.discountType) {
+          formData.discountType = mapUiToApiDiscountType(formData.discountType)
+        }
+        if (formData.validFrom) formData.validFrom = normalizeDateTimeSeconds(formData.validFrom)
+        if (formData.validUntil) formData.validUntil = normalizeDateTimeSeconds(formData.validUntil)
         
         // 변경되지 않은 필드 제거
         Object.keys(formData).forEach(key => {
@@ -481,12 +632,12 @@ export default {
           }
         })
 
-  await api.put(`/admin/coupons/${editingCoupon.value.id}`, formData)
-        
+        await api.put(`/admin/coupons/${editingCoupon.value.id}`, formData)
+
         alert('쿠폰이 성공적으로 수정되었습니다.')
         closeModals()
-        loadCoupons()
-        loadStats()
+        await loadCoupons()
+        await loadStats()
       } catch (error) {
         console.error('쿠폰 수정 실패:', error)
         alert(error.response?.data?.message || '쿠폰 수정에 실패했습니다.')
@@ -501,13 +652,13 @@ export default {
       if (!confirm(`정말로 이 쿠폰을 ${action}하시겠습니까?`)) return
 
       try {
-  await api.put(`/admin/coupons/${coupon.id}/status`, {
+        await api.put(`/admin/coupons/${coupon.id}/status`, {
           status: newStatus
         })
-        
+
         alert(`쿠폰이 성공적으로 ${action}되었습니다.`)
-        loadCoupons()
-        loadStats()
+        await loadCoupons()
+        await loadStats()
       } catch (error) {
         console.error('쿠폰 상태 변경 실패:', error)
         alert(`쿠폰 ${action}에 실패했습니다.`)
@@ -524,11 +675,11 @@ export default {
       if (!confirm('정말로 이 쿠폰을 삭제하시겠습니까?')) return
 
       try {
-  await api.delete(`/admin/coupons/${coupon.id}`)
-        
+        await api.delete(`/admin/coupons/${coupon.id}`)
+
         alert('쿠폰이 성공적으로 삭제되었습니다.')
-        loadCoupons()
-        loadStats()
+        await loadCoupons()
+        await loadStats()
       } catch (error) {
         console.error('쿠폰 삭제 실패:', error)
         alert('쿠폰 삭제에 실패했습니다.')
@@ -544,7 +695,7 @@ export default {
         code: coupon.code,
         name: coupon.name,
         description: coupon.description || '',
-        discountType: coupon.discountType,
+        discountType: mapApiToUiDiscountType(coupon.discountType),
         discountValue: coupon.discountValue,
         minOrderAmount: coupon.minOrderAmount,
         maxDiscountAmount: coupon.maxDiscountAmount,

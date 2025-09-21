@@ -201,62 +201,15 @@ export default {
       if (!allowed.has(prop)) return null
       return `${prop},${dir}`
     }
-
-    const onPageChange = (p) => {
-      loadPayments(p - 1)
+    const onPageChange = (page1Based) => {
+      const target = Math.max(0, Math.min((page1Based - 1), payments.totalPages - 1))
+      loadPayments(target)
     }
 
-    const onSizeChange = (s) => {
-      payments.size = s
+    const onSizeChange = (size) => {
+      payments.size = size
       loadPayments(0)
     }
-
-    const confirmRefund = async (p) => {
-      const ok = window.confirm(`결제(ID: ${p.id})를 환불 처리하시겠습니까?`)
-      if (!ok) return
-      refundingId.value = p.id
-      try {
-        const res = await fetch(`/api/admin/payments/${p.id}/refund`, {
-          method: 'POST',
-          headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
-        })
-        if (!res.ok) {
-          if (res.status === 400) {
-            alert('환불은 결제 완료 상태(PAID)만 가능합니다.')
-            return
-          }
-          throw new Error('환불 처리 실패')
-        }
-        await loadPayments(payments.page)
-        alert('환불이 처리되었습니다.')
-      } catch (err) {
-        alert('환불 처리 중 오류가 발생했습니다.')
-      } finally {
-        refundingId.value = null
-      }
-    }
-
-    const formatCurrency = (v) => {
-      if (v == null) return '₩0'
-      const num = typeof v === 'number' ? v : Number(v)
-      return new Intl.NumberFormat('ko-KR', { style: 'currency', currency: 'KRW' }).format(num)
-    }
-
-    const formatDateTime = (dt) => {
-      if (!dt) return '-'
-      const d = new Date(dt)
-      if (isNaN(d.getTime())) return String(dt)
-      const yyyy = d.getFullYear()
-      const mm = String(d.getMonth()+1).padStart(2,'0')
-      const dd = String(d.getDate()).padStart(2,'0')
-      const hh = String(d.getHours()).padStart(2,'0')
-      const mi = String(d.getMinutes()).padStart(2,'0')
-      return `${yyyy}-${mm}-${dd} ${hh}:${mi}`
-    }
-
-    onMounted(() => {
-      loadPayments(0)
-    })
 
     const resetFilters = () => {
       filters.hotelName = ''
@@ -269,6 +222,38 @@ export default {
       filterDrawer.value = false
       loadPayments(0)
     }
+
+    const confirmRefund = async (row) => {
+      if (!row || row.status !== 'PAID') return
+      if (!confirm('이 결제를 환불하시겠습니까?')) return
+      refundingId.value = row.id
+      try {
+        const res = await fetch(`/api/admin/payments/${row.id}/refund`, {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+        })
+        if (!res.ok) throw new Error('환불 실패')
+        alert('환불이 처리되었습니다.')
+        loadPayments(payments.page)
+      } catch (e) {
+        alert('환불 처리 중 오류가 발생했습니다.')
+      } finally {
+        refundingId.value = null
+      }
+    }
+
+    const formatCurrency = (n) => {
+      if (n == null) return '-'
+      return new Intl.NumberFormat('ko-KR', { style: 'currency', currency: 'KRW', maximumFractionDigits: 0 }).format(n)
+    }
+
+    const formatDateTime = (v) => {
+      if (!v) return '-'
+      const d = new Date(v)
+      return d.toLocaleString('ko-KR')
+    }
+
+    onMounted(() => loadPayments(0))
 
     const statusBadgeClass = (s) => {
       const m = {
@@ -294,54 +279,4 @@ export default {
 }
 </script>
 
-<style scoped>
-.payment-management { padding: 20px; }
-.page-toolbar { display: flex; justify-content: flex-end; align-items: center; gap: 8px; margin-bottom: 12px; }
-.actions { display: flex; gap: 8px; align-items: center; }
-
-.btn { padding: 8px 12px; border: 1px solid #ddd; background: #fff; border-radius: 6px; cursor: pointer; }
-.btn-sm { padding: 4px 8px; font-size: 12px; }
-.btn-primary { background: #2c7be5; color: #fff; border-color: #2c7be5; }
-.btn-danger { background: #e55353; color: #fff; border-color: #e55353; }
-.text-right { text-align: right; }
-
-.table-section { background: #fff; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.06); overflow: hidden; }
-.payments-table { width: 100%; border-collapse: collapse; font-size: 14px; }
-.payments-table th, .payments-table td { padding: 12px 10px; border-bottom: 1px solid #f1f3f5; }
-.payments-table th { background: #f8f9fa; color: #333; text-align: left; white-space: nowrap; user-select: none; }
-.payments-table th .sort { cursor: pointer; }
-.payments-table tr:hover { background: #fafafa; }
-.sort.asc::after { content: '▲'; font-size: 10px; margin-left: 4px; }
-.sort.desc::after { content: '▼'; font-size: 10px; margin-left: 4px; }
-
-.amount { text-align: right; font-variant-numeric: tabular-nums; }
-.mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; }
-.pagination { display: flex; justify-content: space-between; align-items: center; padding: 12px; gap: 8px; }
-.pagination .right { display: flex; align-items: center; gap: 8px; }
-.pagination .left select { margin-left: 6px; }
-.column-selector { display: grid; grid-template-columns: 1fr; gap: 6px; }
-
-.empty { text-align: center; padding: 40px 0; color: #666; }
-.empty .empty-icon { font-size: 36px; margin-bottom: 8px; }
-
-/* 드롭다운 */
-.dropdown { position: relative; }
-.dropdown-menu { position: absolute; right: 0; top: calc(100% + 6px); background: #fff; border: 1px solid #e9ecef; border-radius: 8px; padding: 10px; min-width: 200px; box-shadow: 0 10px 20px rgba(0,0,0,0.08); z-index: 10; }
-.dropdown-item { padding: 4px 2px; }
-
-/* 사이드 패널 */
-.side-panel { position: fixed; right: 0; top: 0; bottom: 0; width: 320px; background: #fff; box-shadow: -4px 0 20px rgba(0,0,0,0.1); z-index: 1000; display: flex; flex-direction: column; }
-.side-panel-header { display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; border-bottom: 1px solid #eee; }
-.side-panel-body { padding: 12px 16px; display: grid; gap: 12px; }
-.side-panel-body .field label { font-size: 12px; color: #555; margin-bottom: 4px; }
-.side-panel-body .field input, .side-panel-body .field select { padding: 8px 10px; border: 1px solid #ddd; border-radius: 6px; }
-.side-panel-footer { padding: 12px 16px; border-top: 1px solid #eee; display: flex; gap: 8px; justify-content: flex-end; }
-
-/* 상태 배지 */
-.badge { display: inline-block; padding: 4px 8px; border-radius: 12px; font-size: 12px; }
-.badge-success { background: #d4edda; color: #155724; }
-.badge-warning { background: #fff3cd; color: #856404; }
-.badge-danger { background: #f8d7da; color: #721c24; }
-.badge-info { background: #d1ecf1; color: #0c5460; }
-.badge-default { background: #e2e3e5; color: #383d41; }
-</style>
+<style scoped src="@/assets/css/admin/payment-management.css"></style>

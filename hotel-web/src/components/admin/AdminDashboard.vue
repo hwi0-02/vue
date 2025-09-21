@@ -10,7 +10,6 @@
       <button class="btn btn-primary" @click="refreshData">새로고침</button>
     </div>
 
-    <!-- 핵심 지표 요약 카드 (다른 페이지와 동일한 카드 디자인) -->
     <div class="summary-cards mb-16">
       <div class="card users">
         <div class="card-icon"></div>
@@ -56,9 +55,7 @@
       </div>
     </div>
 
-  <!-- 차트 섹션 -->
-    <div class="charts-section">
-      <!-- 매출 추이 차트 -->
+  <div class="charts-section">
       <div class="chart-container" v-if="chartOptions.showRevenue">
         <div class="chart-header">
           <h3>최근 30일 매출 추이</h3>
@@ -76,7 +73,6 @@
         </div>
       </div>
 
-      <!-- 월별 가입자 차트 -->
       <div class="chart-container" v-if="chartOptions.showSignups">
         <div class="chart-header">
           <h3>최근 12개월 신규 가입자</h3>
@@ -95,8 +91,7 @@
       </div>
     </div>
 
-  <!-- 인기 호텔 Top 5 -->
-    <div class="top-hotels-section" v-if="chartOptions.showTopHotels">
+  <div class="top-hotels-section" v-if="chartOptions.showTopHotels">
       <div class="section-header">
   <h3>인기 호텔 Top 5 (최근 30일)</h3>
       </div>
@@ -137,7 +132,6 @@
       </div>
     </div>
 
-    <!-- 설정 드로어 -->
     <div class="drawer-overlay" v-if="showFilterDrawer" @click.self="showFilterDrawer = false">
       <div class="drawer" role="dialog" aria-modal="true">
         <div class="drawer-header">
@@ -158,7 +152,7 @@
 </template>
 
 <script>
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, onMounted, onBeforeUnmount } from 'vue'
 import { Line, Bar } from 'vue-chartjs'
 import {
   Chart as ChartJS,
@@ -391,9 +385,24 @@ export default {
       }
     }
 
+    // USER만 사용자, BUSINESS만 사업자 카운트 재계산
+    const recalcCountsFromUsers = async () => {
+      try {
+        const [usersRes, businessRes] = await Promise.all([
+          api.get('/admin/users', { params: { role: 'USER', page: 0, size: 1 } }),
+          api.get('/admin/users', { params: { role: 'BUSINESS', page: 0, size: 1 } })
+        ])
+        dashboardData.totalUsers = Number(usersRes.data?.totalElements ?? 0)
+        dashboardData.totalBusinesses = Number(businessRes.data?.totalElements ?? 0)
+      } catch (e) {
+        // 무시: 서버가 해당 필터를 지원하지 않으면 기존 값을 유지
+      }
+    }
+
     // 데이터 새로고침
-    const refreshData = () => {
-      loadDashboardData()
+    const refreshData = async () => {
+      await loadDashboardData()
+      await recalcCountsFromUsers()
     }
 
     const applyDashboardOptions = () => {
@@ -414,10 +423,26 @@ export default {
       return num.toLocaleString('ko-KR') + '원'
     }
 
-    // 컴포넌트 마운트 시 데이터 로드
-    onMounted(() => {
+    // 컴포넌트 마운트 시 데이터 로드 및 외부 갱신 신호 수신
+    let _refreshHandler
+    onMounted(async () => {
       loadSavedOptions()
-      loadDashboardData()
+      await loadDashboardData()
+      await recalcCountsFromUsers()
+      // 세션 플래그가 있으면 갱신
+      try {
+        if (sessionStorage.getItem('dashboardNeedsRefresh')) {
+          await loadDashboardData()
+          await recalcCountsFromUsers()
+          sessionStorage.removeItem('dashboardNeedsRefresh')
+        }
+      } catch {}
+      _refreshHandler = () => refreshData()
+      window.addEventListener('admin:refresh-dashboard', _refreshHandler)
+    })
+
+    onBeforeUnmount(() => {
+      if (_refreshHandler) window.removeEventListener('admin:refresh-dashboard', _refreshHandler)
     })
 
     return {
@@ -442,397 +467,6 @@ export default {
     }
   }
 }
-</script>
+/**/</script>
 
-<style scoped>
-.admin-dashboard {
-  padding: 20px;
-}
-
-.page-toolbar { display: flex; align-items: center; justify-content: flex-end; gap: 10px; margin-bottom: 16px; }
-
-.last-updated {
-  color: #6c757d;
-  font-size: 14px;
-}
-
-/* 요약 카드 스타일 (HotelManagement와 일치) */
-.summary-cards {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 20px;
-  margin-bottom: 30px;
-}
-
-.card {
-  background: white;
-  border-radius: 12px;
-  padding: 24px;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  transition: transform 0.2s ease;
-}
-
-.card:hover { transform: translateY(-2px); }
-
-.card.users { border-left: 4px solid #667eea; }
-.card.businesses { border-left: 4px solid #f093fb; }
-.card.reservations { border-left: 4px solid #4facfe; }
-.card.revenue { border-left: 4px solid #43e97b; }
-.card.reviews { border-left: 4px solid #ffecd2; }
-.card.coupons { border-left: 4px solid #a8edea; }
-
-.card-icon {
-  font-size: 32px;
-  width: 60px;
-  height: 60px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background-color: #f8f9fa;
-  border-radius: 50%;
-}
-
-.card-content h3 {
-  margin: 0 0 8px 0;
-  font-size: 14px;
-  color: #7f8c8d;
-  font-weight: 500;
-}
-
-.card-number {
-  margin: 0;
-  font-size: 28px;
-  font-weight: 700;
-  color: #2c3e50;
-}
-
-/* 차트 섹션 */
-.charts-section {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 30px;
-  margin-bottom: 40px;
-}
-
-.chart-container {
-  background: white;
-  border-radius: 12px;
-  padding: 25px;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-}
-
-.chart-header {
-  margin-bottom: 20px;
-  border-bottom: 1px solid #e9ecef;
-  padding-bottom: 15px;
-}
-
-.chart-header h3 {
-  color: #2c3e50;
-  font-size: 18px;
-  font-weight: 600;
-  margin: 0;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.chart-content {
-  height: 300px;
-  position: relative;
-}
-
-.chart-loading {
-  height: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #6c757d;
-  font-size: 16px;
-}
-
-.chart-loading i {
-  margin-right: 10px;
-}
-
-.mb-16 { margin-bottom: 16px; }
-.kpi { font-size: 22px; font-weight: 700; margin-top: 6px; }
-
-/* 인기 호텔 섹션 */
-.top-hotels-section {
-  background: white;
-  border-radius: 12px;
-  padding: 25px;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-}
-
-.section-header {
-  margin-bottom: 25px;
-  border-bottom: 1px solid #e9ecef;
-  padding-bottom: 15px;
-}
-
-.section-header h3 {
-  color: #2c3e50;
-  font-size: 18px;
-  font-weight: 600;
-  margin: 0;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.top-hotels-list {
-  display: flex;
-  flex-direction: column;
-  gap: 15px;
-}
-
-.hotel-item {
-  display: flex;
-  align-items: center;
-  padding: 20px;
-  border-radius: 10px;
-  background: #f8f9fa;
-  transition: all 0.3s ease;
-}
-
-.hotel-item:hover {
-  background: #e9ecef;
-  transform: translateX(5px);
-}
-
-.hotel-item.rank-1 {
-  background: linear-gradient(135deg, #ffd700 0%, #ffed4a 100%);
-  color: #2c3e50;
-}
-
-.hotel-item.rank-2 {
-  background: linear-gradient(135deg, #c0c0c0 0%, #e8e8e8 100%);
-  color: #2c3e50;
-}
-
-.hotel-item.rank-3 {
-  background: linear-gradient(135deg, #cd7f32 0%, #daa520 100%);
-  color: white;
-}
-
-.hotel-rank {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin-right: 20px;
-  min-width: 60px;
-}
-
-.rank-number {
-  font-size: 24px;
-  font-weight: 700;
-  width: 30px;
-  text-align: center;
-}
-
-/* icon styles removed */
-
-.hotel-info {
-  flex: 1;
-  margin-right: 20px;
-}
-
-.hotel-info h4 {
-  margin: 0 0 5px 0;
-  font-size: 18px;
-  font-weight: 600;
-}
-
-.business-name {
-  margin: 0;
-  color: #6c757d;
-  font-size: 14px;
-}
-
-.hotel-item.rank-1 .business-name,
-.hotel-item.rank-2 .business-name,
-.hotel-item.rank-3 .business-name {
-  color: rgba(0, 0, 0, 0.7);
-}
-
-.hotel-stats {
-  display: flex;
-  gap: 20px;
-}
-
-.stat {
-  text-align: center;
-  min-width: 80px;
-}
-
-.stat .label {
-  display: block;
-  font-size: 12px;
-  color: #6c757d;
-  margin-bottom: 2px;
-}
-
-.hotel-item.rank-1 .stat .label,
-.hotel-item.rank-2 .stat .label,
-.hotel-item.rank-3 .stat .label {
-  color: rgba(0, 0, 0, 0.6);
-}
-
-.stat .value {
-  display: block;
-  font-size: 14px;
-  font-weight: 600;
-}
-
-.stat .value i {
-  color: #ffc107;
-  margin-right: 2px;
-}
-
-.no-data {
-  text-align: center;
-  padding: 40px;
-  color: #6c757d;
-  font-size: 16px;
-}
-
-.no-data i {
-  margin-right: 8px;
-}
-
-/* 버튼 스타일 */
-.btn {
-  padding: 10px 20px;
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
-  font-size: 14px;
-  font-weight: 500;
-  transition: all 0.2s ease;
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  text-decoration: none;
-  justify-content: center;
-}
-
-.btn-primary {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
-}
-
-.btn-primary:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
-}
-
-/* 설정 드로어 */
-.drawer-overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.35);
-  display: flex;
-  justify-content: flex-end;
-  z-index: 1000;
-}
-
-.drawer {
-  width: min(360px, 90vw);
-  background: #fff;
-  height: 100%;
-  box-shadow: -4px 0 12px rgba(0,0,0,0.1);
-  display: flex;
-  flex-direction: column;
-}
-
-.drawer-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 16px 20px;
-  border-bottom: 1px solid #e9ecef;
-}
-
-.drawer-body {
-  padding: 16px 20px;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.drawer-footer {
-  margin-top: auto;
-  padding: 12px 20px;
-  border-top: 1px solid #e9ecef;
-  display: flex;
-  justify-content: flex-end;
-}
-
-
-/* 로딩 오버레이 */
-.loading-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(255, 255, 255, 0.8);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 999;
-}
-
-.spinner {
-  width: 40px;
-  height: 40px;
-  border: 4px solid #f3f3f3;
-  border-top: 4px solid #667eea;
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
-}
-
-/* 반응형 디자인 */
-@media (max-width: 1200px) {
-  .charts-section {
-    grid-template-columns: 1fr;
-  }
-}
-
-@media (max-width: 768px) {
-  .summary-cards {
-    grid-template-columns: 1fr;
-  }
-  
-  .hotel-item {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 15px;
-  }
-  
-  .hotel-rank {
-    margin-right: 0;
-  }
-  
-  .hotel-stats {
-    width: 100%;
-    justify-content: space-around;
-  }
-  
-  .dashboard-header {
-    flex-direction: column;
-    gap: 15px;
-    align-items: flex-start;
-  }
-}
-</style>
+<style scoped src="@/assets/css/admin/admin-dashboard.css"></style>
