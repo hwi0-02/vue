@@ -24,6 +24,7 @@ import com.example.backend.repository.PaymentRepository;
 import com.example.backend.repository.ReservationRepository;
 import com.example.backend.repository.ReviewRepository;
 import com.example.backend.repository.UserRepository;
+import com.example.backend.service.BusinessService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -52,10 +53,12 @@ public class AdminController {
 
     private final UserRepository userRepository;
     private final BusinessRepository businessRepository;
+    private final com.example.backend.service.AdminBusinessService adminBusinessService;
     private final ReservationRepository reservationRepository;
     private final PaymentRepository paymentRepository;
     private final ReviewRepository reviewRepository;
     private final CouponRepository couponRepository;
+    private final BusinessService businessService;
 
     /**
      * 사용자 목록 조회 (검색 및 페이징)
@@ -138,15 +141,30 @@ public class AdminController {
      */
     @GetMapping("/businesses")
     public ResponseEntity<Page<BusinessAdminDto>> getBusinesses(
-            @RequestParam(required = false) Business.BusinessStatus status,
-            @PageableDefault(size = 20) Pageable pageable) {
-        
-        log.info("사업자 목록 조회 - status: {}, page: {}", status, pageable.getPageNumber());
+        @RequestParam(required = false) Business.BusinessStatus status,
+        @PageableDefault(size = 20) Pageable pageable) {
+        Page<BusinessAdminDto> dtos = adminBusinessService.getBusinesses(status, pageable);
+        return ResponseEntity.ok(dtos);
+    }
 
-        Page<Business> businesses = businessRepository.findBusinessesWithFilters(status, pageable);
-        Page<BusinessAdminDto> businessDtos = businesses.map(BusinessAdminDto::from);
+    /**
+     * 테스트용 사업자 생성 (관리자만)
+     */
+    @PostMapping("/businesses/test-create")
+    public ResponseEntity<BusinessAdminDto> createTestBusiness(@RequestParam Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("사용자를 찾을 수 없습니다."));
 
-        return ResponseEntity.ok(businessDtos);
+        Business b = new Business();
+        b.setUser(user);
+        b.setBusinessName("테스트 상호 " + System.currentTimeMillis());
+        b.setBusinessNumber("TEST-" + System.currentTimeMillis());
+        b.setAddress("서울시 테스트구 테스트로 123");
+        b.setPhone("010-0000-0000");
+        b.setStatus(Business.BusinessStatus.PENDING);
+        businessRepository.save(b);
+
+        return ResponseEntity.ok(BusinessAdminDto.from(b));
     }
 
     /**
@@ -156,27 +174,26 @@ public class AdminController {
     public ResponseEntity<?> updateBusinessStatus(
             @PathVariable Long businessId,
             @RequestBody StatusUpdateRequest request) {
-        
         log.info("사업자 상태 변경 요청 - businessId: {}, newStatus: {}", businessId, request.getStatus());
 
-        // 사업자 존재 확인
-        Business business = businessRepository.findById(businessId)
-                .orElseThrow(() -> new RuntimeException("사업자를 찾을 수 없습니다."));
+        Business.BusinessStatus oldStatus;
+        try {
+            Business before = businessRepository.findById(businessId)
+                    .orElseThrow(() -> new RuntimeException("사업자를 찾을 수 없습니다."));
+            oldStatus = before.getStatus();
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
 
-        // 상태 변경
-        Business.BusinessStatus oldStatus = business.getStatus();
-        business.setStatus(request.getStatus());
-        businessRepository.save(business);
+        businessService.updateBusinessStatus(businessId, request.getStatus());
 
-        log.info("사업자 상태 변경 완료 - businessId: {}, {} -> {}", 
-                 businessId, oldStatus, request.getStatus());
+        log.info("사업자 상태 변경 완료 - businessId: {}, {} -> {}", businessId, oldStatus, request.getStatus());
 
         Map<String, Object> response = new HashMap<>();
         response.put("message", "상태가 성공적으로 변경되었습니다.");
         response.put("businessId", businessId);
         response.put("oldStatus", oldStatus);
         response.put("newStatus", request.getStatus());
-
         return ResponseEntity.ok(response);
     }
 

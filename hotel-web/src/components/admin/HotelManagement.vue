@@ -45,7 +45,7 @@
       <div class="filter-form">
         <div class="filter-group">
           <label>상태 필터</label>
-          <select v-model="selectedStatus" @change="loadBusinesses" class="filter-select">
+          <select v-model="selectedStatus" @change="onStatusChange" class="filter-select">
             <option value="">전체</option>
             <option value="PENDING">승인 대기</option>
             <option value="APPROVED">승인 완료</option>
@@ -276,10 +276,34 @@ export default {
     }
   },
   mounted() {
-    this.loadBusinesses();
-    this.loadStatusCounts();
+    this.ensureAdminAndLoad();
   },
   methods: {
+    async ensureAdminAndLoad() {
+      try {
+        const resp = await http.get('/user/info');
+        const role = resp?.data?.role;
+        if (role !== 'ADMIN') {
+          alert('관리자 권한이 필요합니다.');
+          this.$router.push('/');
+          return;
+        }
+        await this.loadBusinesses();
+        await this.loadStatusCounts();
+      } catch (e) {
+        if (e?.response?.status === 401) {
+          alert('로그인이 만료되었습니다. 다시 로그인해주세요.');
+          this.$router.push('/login');
+        } else {
+          alert('접근 중 오류가 발생했습니다.');
+          this.$router.push('/');
+        }
+      }
+    },
+    onStatusChange() {
+      this.currentPage = 0
+      this.loadBusinesses()
+    },
     async loadBusinesses() {
       this.loading = true;
       try {
@@ -289,7 +313,11 @@ export default {
         }
         if (this.selectedStatus) params.status = this.selectedStatus
 
+        console.log('사업자 목록 로드 요청:', params)
         const { data } = await http.get('/admin/businesses', { params })
+        
+        console.log('사업자 목록 응답:', data)
+        console.log('사업자 수:', data.totalElements)
 
         this.businesses = data.content || []
         this.totalPages = data.totalPages || 0
@@ -297,7 +325,16 @@ export default {
         this.currentPage = data.number || 0
       } catch (error) {
         console.error('사업자 목록 로드 실패:', error)
-        const msg = error?.response?.data?.error || error?.message || '사업자 목록을 불러오는데 실패했습니다.'
+        let msg = '사업자 목록을 불러오는데 실패했습니다.'
+        if (error?.response?.status === 401) {
+          msg = '로그인이 만료되었습니다. 다시 로그인해주세요.'
+        } else if (error?.response?.status === 403) {
+          msg = '관리자 권한이 필요합니다.'
+        } else if (error?.response?.data?.error) {
+          msg = error.response.data.error
+        } else if (error?.message) {
+          msg = error.message
+        }
         alert(msg)
       } finally {
         this.loading = false;
@@ -350,6 +387,22 @@ export default {
       }
       
       try {
+        // 사전 인증 확인
+        try {
+          const who = await http.get('/auth/whoami')
+          if (who?.data?.authorities?.includes?.('ROLE_ADMIN') !== true) {
+            alert('관리자 권한이 필요합니다. 다시 로그인해주세요.')
+            this.$router.push('/login')
+            return
+          }
+        } catch (e) {
+          if (e?.response?.status === 401) {
+            alert('로그인이 만료되었습니다. 다시 로그인해주세요.')
+            this.$router.push('/login')
+            return
+          }
+        }
+
         await http.put(`/admin/businesses/${business.id}/status`, { status: newStatus })
 
         // 로컬 데이터 업데이트

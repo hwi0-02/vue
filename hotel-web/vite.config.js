@@ -5,6 +5,8 @@ import vue from '@vitejs/plugin-vue'
 import vueDevTools from 'vite-plugin-vue-devtools'
 
 // https://vite.dev/config/
+const API_TARGET = process.env.VITE_API_TARGET || 'http://localhost:8888'
+
 export default defineConfig({
   plugins: [
     vue(),
@@ -18,15 +20,15 @@ export default defineConfig({
   server: {
     proxy: {
       '/api': {
-        target: 'http://localhost:8888',
+        target: API_TARGET,
         changeOrigin: true,
       },
       '/oauth2': {
-        target: 'http://localhost:8888',
+        target: API_TARGET,
         changeOrigin: true,
       },
       '/login/oauth2': {
-        target: 'http://localhost:8888',
+        target: API_TARGET,
         changeOrigin: true,
       },
     },

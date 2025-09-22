@@ -68,8 +68,14 @@ export default {
   methods: {
     logout() {
       if (confirm('로그아웃 하시겠습니까?')) {
-        // TODO: 로그아웃 로직 구현
-        this.$router.push('/')
+        try {
+          localStorage.removeItem('token');
+          localStorage.removeItem('user');
+          localStorage.removeItem('userRole');
+        } catch (e) {}
+        this.$router.push('/').then(() => {
+          window.location.reload();
+        })
       }
     },
     toggleSidebar() { this.isSidebarOpen = !this.isSidebarOpen },

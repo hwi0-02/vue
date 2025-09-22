@@ -55,13 +55,20 @@ public interface PaymentRepository extends JpaRepository<Payment, Long> {
            "WHERE p.status = 'PAID' AND p.reservation.room.id = :roomId")
     Double getTotalRevenueByRoom(@Param("roomId") Long roomId);
 
-    @Query("SELECT p FROM Payment p " +
+    @Query(value = "SELECT p FROM Payment p " +
+           "JOIN FETCH p.reservation r " +
+           "JOIN FETCH r.hotel h " +
+           "JOIN FETCH r.user u " +
+           "WHERE (:hotelName IS NULL OR LOWER(h.name) LIKE LOWER(CONCAT('%', :hotelName, '%'))) " +
+           "AND (:userName IS NULL OR LOWER(u.name) LIKE LOWER(CONCAT('%', :userName, '%'))) " +
+           "AND (:status IS NULL OR p.status = :status)",
+           countQuery = "SELECT COUNT(p) FROM Payment p " +
            "JOIN p.reservation r " +
            "JOIN r.hotel h " +
            "JOIN r.user u " +
            "WHERE (:hotelName IS NULL OR LOWER(h.name) LIKE LOWER(CONCAT('%', :hotelName, '%'))) " +
            "AND (:userName IS NULL OR LOWER(u.name) LIKE LOWER(CONCAT('%', :userName, '%'))) " +
-           "AND (:status IS NULL OR p.status = :status) ")
+           "AND (:status IS NULL OR p.status = :status)")
     Page<Payment> findPaymentsForAdmin(@Param("hotelName") String hotelName,
                                        @Param("userName") String userName,
                                        @Param("status") PaymentStatus status,

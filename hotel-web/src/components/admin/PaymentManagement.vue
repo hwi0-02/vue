@@ -119,6 +119,7 @@
 
 <script>
 import { ref, reactive, onMounted, computed } from 'vue'
+import api from '../../api/http'
 
 export default {
   name: 'PaymentManagement',
@@ -153,27 +154,31 @@ export default {
     const loadPayments = async (page = 0) => {
       loading.value = true
       try {
-        const params = new URLSearchParams()
-        if (filters.hotelName) params.append('hotelName', filters.hotelName)
-        if (filters.userName) params.append('userName', filters.userName)
-        if (filters.status) params.append('status', filters.status)
-        params.append('page', page)
-        params.append('size', payments.size)
+        const paramsObj = {}
+        if (filters.hotelName) paramsObj.hotelName = filters.hotelName
+        if (filters.userName) paramsObj.userName = filters.userName
+        if (filters.status) paramsObj.status = filters.status
+        paramsObj.page = page
+        paramsObj.size = payments.size
         // 정렬 파라미터
         const sortParam = toApiSort(sort.value)
-        if (sortParam) params.append('sort', sortParam)
+        if (sortParam) paramsObj.sort = sortParam
 
-        const res = await fetch(`/api/admin/payments?${params}`, {
-          headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
-        })
-        if (!res.ok) throw new Error('결제 목록 조회 실패')
-        const data = await res.json()
+        const res = await api.get('/admin/payments', { params: paramsObj })
+        const data = res.data
         payments.items = data.content || []
         payments.page = data.number || 0
         payments.totalPages = data.totalPages || 0
         payments.totalElements = data.totalElements || 0
       } catch (err) {
-        alert('결제 목록을 불러오지 못했습니다.')
+        const status = err?.response?.status
+        if (status === 401) {
+          alert('로그인이 필요합니다. 다시 로그인해 주세요.')
+        } else if (status === 403) {
+          alert('접근 권한이 없습니다. 관리자 계정으로 로그인하세요.')
+        } else {
+          alert('결제 목록을 불러오지 못했습니다.')
+        }
       } finally {
         loading.value = false
       }
@@ -228,15 +233,18 @@ export default {
       if (!confirm('이 결제를 환불하시겠습니까?')) return
       refundingId.value = row.id
       try {
-        const res = await fetch(`/api/admin/payments/${row.id}/refund`, {
-          method: 'POST',
-          headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
-        })
-        if (!res.ok) throw new Error('환불 실패')
+        await api.post(`/admin/payments/${row.id}/refund`)
         alert('환불이 처리되었습니다.')
         loadPayments(payments.page)
       } catch (e) {
-        alert('환불 처리 중 오류가 발생했습니다.')
+        const status = e?.response?.status
+        if (status === 401) {
+          alert('로그인이 필요합니다. 다시 로그인해 주세요.')
+        } else if (status === 403) {
+          alert('접근 권한이 없습니다. 관리자 계정으로 로그인하세요.')
+        } else {
+          alert('환불 처리 중 오류가 발생했습니다.')
+        }
       } finally {
         refundingId.value = null
       }

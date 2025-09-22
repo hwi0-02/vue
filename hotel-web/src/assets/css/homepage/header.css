@@ -78,6 +78,27 @@
   color: #4ec89f;
 }
 
+.sidebar ul li.business-apply-menu {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  padding: 16px 12px;
+  border-radius: 8px;
+  margin: 8px 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.sidebar ul li.business-apply-menu:hover {
+  color: white;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+}
+
+.sidebar ul li.business-apply-menu i {
+  font-size: 18px;
+}
+
 /* ---------------- Overlay ---------------- */
 .overlay {
   position: fixed;

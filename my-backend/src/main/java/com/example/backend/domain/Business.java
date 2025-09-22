@@ -56,4 +56,11 @@ public class Business {
     public enum BusinessStatus {
         PENDING, APPROVED, REJECTED, SUSPENDED
     }
+
+    @PrePersist
+    protected void onCreate() {
+        if (this.status == null) {
+            this.status = BusinessStatus.PENDING;
+        }
+    }
 }
