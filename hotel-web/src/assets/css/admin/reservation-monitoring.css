@@ -1,4 +1,8 @@
-.reservation-monitoring { padding: 0; }
+.reservation-monitoring { 
+  padding: 24px;
+  max-width: 100%;
+  overflow-x: hidden;
+}
 
 /* 검색 섹션 */
 .search-section { background: #fff; padding: 16px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.06); }
@@ -125,6 +129,9 @@
 .desc-grid span { display: block; color: #222; font-weight: 500; }
 
 @media (max-width: 768px) {
+  .reservation-monitoring {
+    padding: 16px;
+  }
   .reservations-table { font-size: 12px; }
   .reservations-table th, .reservations-table td { padding: 8px 6px; }
   .desc-grid { grid-template-columns: 1fr; }

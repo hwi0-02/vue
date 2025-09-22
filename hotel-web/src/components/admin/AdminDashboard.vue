@@ -3,54 +3,54 @@
     <div class="page-header">
       <h1>관리자 대시보드</h1>
       <p class="page-description">전체 현황을 한눈에 보고 필요한 지표를 설정할 수 있습니다.</p>
-    </div>
-    <div class="page-toolbar">
-      <span class="last-updated">마지막 업데이트: {{ lastUpdated }}</span>
-      <button class="btn" @click="showFilterDrawer = true">설정</button>
-      <button class="btn btn-primary" @click="refreshData">새로고침</button>
+      <div class="page-toolbar">
+        <span class="last-updated">마지막 업데이트: {{ lastUpdated }}</span>
+        <button class="btn" @click="showFilterDrawer = true">설정</button>
+        <button class="btn btn-primary" @click="refreshData">새로고침</button>
+      </div>
     </div>
 
     <div class="summary-cards mb-16">
       <div class="card users">
         <div class="card-icon"></div>
         <div class="card-content">
-          <h3>총 사용자</h3>
           <p class="card-number">{{ formatNumber(dashboardData.totalUsers) }}</p>
+          <h3>총 사용자</h3>
         </div>
       </div>
       <div class="card businesses">
         <div class="card-icon"></div>
         <div class="card-content">
-          <h3>총 사업자</h3>
           <p class="card-number">{{ formatNumber(dashboardData.totalBusinesses) }}</p>
+          <h3>총 사업자</h3>
         </div>
       </div>
       <div class="card reservations">
         <div class="card-icon"></div>
         <div class="card-content">
-          <h3>총 예약</h3>
           <p class="card-number">{{ formatNumber(dashboardData.totalReservations) }}</p>
+          <h3>총 예약</h3>
         </div>
       </div>
       <div class="card revenue">
         <div class="card-icon"></div>
         <div class="card-content">
-          <h3>총 매출</h3>
           <p class="card-number">{{ formatCurrency(dashboardData.totalRevenue) }}</p>
+          <h3>총 매출</h3>
         </div>
       </div>
       <div class="card reviews">
         <div class="card-icon"></div>
         <div class="card-content">
-          <h3>총 리뷰</h3>
           <p class="card-number">{{ formatNumber(dashboardData.totalReviews) }}</p>
+          <h3>총 리뷰</h3>
         </div>
       </div>
       <div class="card coupons">
         <div class="card-icon"></div>
         <div class="card-content">
-          <h3>총 쿠폰</h3>
           <p class="card-number">{{ formatNumber(dashboardData.totalCoupons) }}</p>
+          <h3>총 쿠폰</h3>
         </div>
       </div>
     </div>

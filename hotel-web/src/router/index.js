@@ -72,7 +72,7 @@ const routes = [
       },
       {
         path: "coupons",
-        component: () => import("@/components/page/CouponManagement.vue")
+        component: () => import("@/components/admin/CouponManagement.vue")
       }
     ]
   }

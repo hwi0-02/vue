@@ -1,4 +1,8 @@
-.payment-management { padding: 0; }
+.payment-management { 
+  padding: 24px;
+  max-width: 100%;
+  overflow-x: hidden;
+}
 .page-toolbar { display: flex; justify-content: flex-end; align-items: center; gap: 8px; margin-bottom: 12px; }
 .actions { display: flex; gap: 8px; align-items: center; }
 
@@ -47,3 +51,16 @@
 .badge-danger { background: #f8d7da; color: #721c24; }
 .badge-info { background: #d1ecf1; color: #0c5460; }
 .badge-default { background: #e2e3e5; color: #383d41; }
+
+/* 모바일 반응형 */
+@media (max-width: 768px) {
+  .payment-management {
+    padding: 16px;
+  }
+  .payments-table {
+    font-size: 12px;
+  }
+  .payments-table th, .payments-table td {
+    padding: 8px 6px;
+  }
+}

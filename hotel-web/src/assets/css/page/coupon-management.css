@@ -1,9 +1,7 @@
 .coupon-management {
-  padding: 24px;
-  width: 100%;
-  max-width: none;
-  margin: 0;
-  overflow-x: hidden;
+  padding: 20px;
+  max-width: 1400px;
+  margin: 0 auto;
 }
 
 .management-header {
@@ -28,17 +26,15 @@
 /* 통계 카드 스타일 */
 .stats-cards {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 20px;
   margin-bottom: 30px;
 }
 
-/* 모바일에서는 1열로 */
-@media (max-width: 768px) {
-  .coupon-management {
-    padding: 16px;
+@media (max-width: 640px) {
+  .stats-cards {
+    grid-template-columns: 1fr;
   }
-  .stats-cards { grid-template-columns: 1fr; }
 }
 
 .stat-card {
@@ -496,7 +492,9 @@
     grid-template-columns: 1fr;
   }
   
-  /* keep two columns even on smaller screens */
+  .stats-cards {
+    grid-template-columns: 1fr;
+  }
   
   .coupon-table {
     font-size: 12px;

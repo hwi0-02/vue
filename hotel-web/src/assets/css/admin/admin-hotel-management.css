@@ -1,4 +1,10 @@
-.hotel-management { max-width: 1400px; margin: 0 auto; padding: 0; }
+.hotel-management { 
+  max-width: none; 
+  width: 100%; 
+  margin: 0; 
+  padding: 24px;
+  overflow-x: hidden;
+}
 
 /* page-header uses global styles */
 
@@ -443,6 +449,10 @@
 }
 
 @media (max-width: 768px) {
+  .hotel-management {
+    padding: 16px;
+  }
+  
   .hotels-table {
     font-size: 14px;
   }

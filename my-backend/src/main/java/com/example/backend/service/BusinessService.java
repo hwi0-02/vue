@@ -21,12 +21,12 @@ public class BusinessService {
 
     @Transactional
     public void applyBusiness(String userEmail, BusinessApplyRequestDto request) {
-        log.info("사업자 신청 시작 - 이메일: {}", userEmail);
+    log.info("사업자 신청 - 이메일: {}", userEmail);
         
         User user = userRepository.findByEmail(userEmail)
                 .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
 
-        log.info("사용자 정보 - ID: {}, Role: {}", user.getId(), user.getRole());
+    // minimal log
 
         // 현재 역할이 USER가 아니면 중복 신청 방지
         if (user.getRole() != User.Role.USER) {
@@ -70,13 +70,13 @@ public class BusinessService {
                 .build();
 
         Business savedBusiness = businessRepository.save(business);
-        log.info("사업자 정보 저장 완료 - ID: {}, Status: {}", savedBusiness.getId(), savedBusiness.getStatus());
+    log.info("사업자 정보 저장 - ID: {}", savedBusiness.getId());
 
         // 사용자 역할을 BUSINESS로 변경 (사업자 신청 후)
         user.setRole(User.Role.BUSINESS);
         User updatedUser = userRepository.save(user);
         
-        log.info("사용자 역할 변경 완료 - 새 역할: {}", updatedUser.getRole());
+    log.info("사용자 역할 변경 - {}", updatedUser.getRole());
     }
 
     /**
@@ -100,7 +100,7 @@ public class BusinessService {
             }
         }
 
-        log.info("사업자 상태 변경 - businessId: {}, {} -> {}", businessId, oldStatus, newStatus);
+    log.info("사업자 상태 변경 - businessId: {}, {} -> {}", businessId, oldStatus, newStatus);
         return business;
     }
 }

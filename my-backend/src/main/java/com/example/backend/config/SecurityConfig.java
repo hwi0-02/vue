@@ -64,17 +64,11 @@ public class SecurityConfig {
             )
             .exceptionHandling(ex -> ex
                 .authenticationEntryPoint((request, response, authException) -> {
-                    try {
-                        System.out.println("[SECURITY][401] " + request.getMethod() + " " + request.getRequestURI());
-                    } catch (Exception ignored) {}
                     response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
                     response.setContentType("application/json;charset=UTF-8");
                     response.getWriter().write("{\"error\":\"Unauthorized\"}");
                 })
                 .accessDeniedHandler((request, response, accessDeniedException) -> {
-                    try {
-                        System.out.println("[SECURITY][403] " + request.getMethod() + " " + request.getRequestURI());
-                    } catch (Exception ignored) {}
                     response.setStatus(HttpServletResponse.SC_FORBIDDEN);
                     response.setContentType("application/json;charset=UTF-8");
                     response.getWriter().write("{\"error\":\"Forbidden\"}");

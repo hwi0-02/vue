@@ -35,7 +35,9 @@
         </div>
       </header>
       <main class="content">
-        <router-view />
+        <div class="admin-page">
+          <router-view />
+        </div>
       </main>
     </div>
   </div>

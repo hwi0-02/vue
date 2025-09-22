@@ -21,9 +21,7 @@ public class BusinessController {
 
     @PostMapping("/apply")
     public ResponseEntity<?> apply(@RequestBody BusinessApplyRequestDto request, Authentication authentication) {
-        log.info("=== 사업자 신청 API 호출 ===");
-        log.info("인증 정보: {}", authentication != null ? authentication.getName() : "null");
-        log.info("요청 데이터: {}", request);
+        log.info("사업자 신청 API 호출");
         
         if (authentication == null) {
             log.error("인증 정보가 없습니다");
@@ -32,7 +30,7 @@ public class BusinessController {
         
         try {
             businessService.applyBusiness(authentication.getName(), request);
-            log.info("사업자 신청 성공 완료");
+            log.info("사업자 신청 성공");
             return ResponseEntity.ok(Map.of(
                     "message", "신청이 완료되었습니다. 관리자 승인 후 활동할 수 있습니다."
             ));
@@ -40,10 +38,10 @@ public class BusinessController {
             log.warn("사업자 신청 입력 오류: {}", e.getMessage());
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         } catch (IllegalStateException e) {
-            log.error("사업자 신청 비즈니스 로직 오류: {}", e.getMessage());
+            log.warn("사업자 신청 중복/상태 오류: {}", e.getMessage());
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         } catch (Exception e) {
-            log.error("사업자 신청 처리 중 예외 발생", e);
+            log.error("사업자 신청 처리 중 예외", e);
             return ResponseEntity.badRequest().body(Map.of("error", "신청 처리 중 오류가 발생했습니다."));
         }
     }

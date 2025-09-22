@@ -313,18 +313,14 @@ export default {
         }
         if (this.selectedStatus) params.status = this.selectedStatus
 
-        console.log('사업자 목록 로드 요청:', params)
         const { data } = await http.get('/admin/businesses', { params })
-        
-        console.log('사업자 목록 응답:', data)
-        console.log('사업자 수:', data.totalElements)
 
         this.businesses = data.content || []
         this.totalPages = data.totalPages || 0
         this.totalElements = data.totalElements || 0
         this.currentPage = data.number || 0
       } catch (error) {
-        console.error('사업자 목록 로드 실패:', error)
+  // 오류는 알림으로만 처리
         let msg = '사업자 목록을 불러오는데 실패했습니다.'
         if (error?.response?.status === 401) {
           msg = '로그인이 만료되었습니다. 다시 로그인해주세요.'
@@ -347,7 +343,7 @@ export default {
         const requests = statuses.map(status =>
           http.get('/admin/businesses', { params: { status, page: 0, size: 1 } })
         )
-        const results = await Promise.allSettled(requests)
+  const results = await Promise.allSettled(requests)
 
         const totals = {
           PENDING: 0,

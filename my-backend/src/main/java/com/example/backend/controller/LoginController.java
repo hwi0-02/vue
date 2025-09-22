@@ -31,9 +31,7 @@ public class LoginController {
     // 회원가입
     @PostMapping("/users/register")
     public ResponseEntity<?> register(@RequestBody User user) {
-        log.info("User registration attempt for email: {}", user.getEmail());
-        log.info("User registration data - Name: {}, Email: {}, Phone: {}, Address: {}", 
-                user.getName(), user.getEmail(), user.getPhone(), user.getAddress());
+    log.info("회원가입 시도 - {}", user.getEmail());
         
         // 필수 필드 검증
         if (user.getName() == null || user.getName().trim().isEmpty()) {
@@ -65,7 +63,7 @@ public class LoginController {
         
         try {
             User savedUser = loginService.register(user);
-            log.info("User registration successful - ID: {}, Email: {}", savedUser.getId(), savedUser.getEmail());
+            log.info("회원가입 성공 - {}", savedUser.getEmail());
             return ResponseEntity.ok(savedUser);
         } catch (IllegalArgumentException e) {
             log.error("User registration failed for email: {} - {}", user.getEmail(), e.getMessage());
@@ -79,7 +77,7 @@ public class LoginController {
     // 로그인
     @PostMapping("/users/login")
     public ResponseEntity<?> login(@RequestParam String email, @RequestParam String password) {
-        log.info("Login attempt for email: {}", email);
+    log.info("로그인 시도 - {}", email);
         
         // 입력 검증
         if (email == null || email.trim().isEmpty()) {
@@ -98,7 +96,7 @@ public class LoginController {
                 Map<String, Object> response = new HashMap<>();
                 response.put("token", token);
                 response.put("user", getUserInfo(user.get()));
-                log.info("Login successful for email: {}", email);
+                log.info("로그인 성공 - {}", email);
                 return ResponseEntity.ok(response);
             } else {
                 log.warn("Login failed for email: {} - Invalid credentials", email);

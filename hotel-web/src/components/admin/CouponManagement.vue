@@ -753,3 +753,23 @@ export default {
 }
 </script>
 <style scoped src="@/assets/css/admin/coupon-management.css"></style>
+<style scoped>
+/* 강제 2열 카드 배치 (컴포넌트 로컬 우선 적용) */
+.coupon-management .stats-cards {
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  gap: 20px !important;
+}
+
+/* 카드가 컬럼 너비를 꽉 채우도록 */
+.coupon-management .stat-card {
+  width: 100% !important;
+}
+
+/* 아주 작은 화면에서만 1열로 */
+@media (max-width: 640px) {
+  .coupon-management .stats-cards {
+    grid-template-columns: 1fr !important;
+  }
+}
+</style>

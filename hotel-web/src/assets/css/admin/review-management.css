@@ -1,4 +1,8 @@
-.review-management { padding: 0; }
+.review-management { 
+  padding: 24px;
+  max-width: 100%;
+  overflow-x: hidden;
+}
 
 /* 필터 섹션 */
 .filters {
@@ -384,6 +388,10 @@
 }
 
 @media (max-width: 768px) {
+  .review-management {
+    padding: 16px;
+  }
+  
   .filter-row {
     flex-direction: column;
     align-items: stretch;
